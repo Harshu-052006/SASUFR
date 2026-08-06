@@ -74,10 +74,10 @@ async def verify_liveness(image_data: str, challenge: str | None) -> None:
         dist_right_eye = abs(nose_x - right_eye_x)
         
         if challenge == "turn_left":
-            if dist_left_eye >= dist_right_eye * 0.9:
+            if dist_right_eye >= dist_left_eye * 0.9:
                 raise HTTPException(status_code=400, detail="Liveness failed: Please turn your head to your LEFT")
         elif challenge == "turn_right":
-            if dist_right_eye >= dist_left_eye * 0.9:
+            if dist_left_eye >= dist_right_eye * 0.9:
                 raise HTTPException(status_code=400, detail="Liveness failed: Please turn your head to your RIGHT")
 
 

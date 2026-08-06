@@ -180,3 +180,11 @@ For the deeper architecture write-up, see [Smart_Attendance_FullStack.md](Smart_
 - **Facebook AI Similarity Search (FAISS) Docs:** https://github.com/facebookresearch/faiss
 - **Haversine Formula for Spatial Distance Calculations:** https://en.wikipedia.org/wiki/Haversine_formula
 - **ReportLab PDF Generation User Guide:** https://www.reportlab.com/documentation/
+
+## Recent Updates
+
+- **Session V2 Integration:** Updated core attendance logic to support the new `session_logs` (V2) format with string-based session IDs alongside legacy integer IDs.
+- **Target Group Enforcement:** Attendance marking now enforces target group validation (Batch, Sub-batch, Elective) for V2 sessions.
+- **Improved Database Indexes:** Updated MongoDB indexes to ensure attendance uniqueness across `user_id`, `date`, and `session_id`.
+- **Face Liveness Fixes:** Fixed directional validation logic (left/right head turn) in the face liveness challenge.
+- **Attendance Calculation:** Refactored attendance percentage calculation to utilize the centralized stats function.

@@ -65,7 +65,7 @@ async def ensure_indexes() -> None:
     await database.class_sessions.create_index([("id", ASCENDING)], unique=True)
     await database.users.create_index([("is_active", ASCENDING), ("is_verified", ASCENDING)])
     await database.attendance.create_index([("id", ASCENDING)], unique=True)
-    await database.attendance.create_index([("user_id", ASCENDING), ("date", ASCENDING)], unique=True)
+    await database.attendance.create_index([("user_id", ASCENDING), ("date", ASCENDING), ("session_id", ASCENDING)], unique=True)
     await database.security_logs.create_index([("id", ASCENDING)], unique=True)
     await database.security_logs.create_index([("created_at", ASCENDING)])
     await database.absent_notification_claims.create_index([("id", ASCENDING)], unique=True)

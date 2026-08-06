@@ -418,6 +418,10 @@ async def _insert_or_update_attendance(
     today = date_key()
     now = now_ist()
     query = {"user_id": user["id"], "date": today}
+    if session_id is not None:
+        query["session_id"] = session_id
+    else:
+        query["session_id"] = None
     
     max_retries = 3
     for attempt in range(max_retries):
@@ -553,18 +557,44 @@ async def get_active_class_sessions(
     return sessions
 
 
-async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, session_id: int, image: str, latitude: float | None, longitude: float | None, liveness_challenge: str | None = None) -> dict:
+async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, session_id: str | int, image: str, latitude: float | None, longitude: float | None, liveness_challenge: str | None = None) -> dict:
     if not student.get("is_active"):
         raise HTTPException(status_code=403, detail="Account is deactivated")
         
-    session = await db.class_sessions.find_one({"id": session_id})
+    session = None
+    is_v2 = False
+    
+    try:
+        numeric_id = int(session_id)
+        session = await db.class_sessions.find_one({"id": numeric_id})
+    except ValueError:
+        pass
+        
+    if not session:
+        session = await db.session_logs.find_one({"id": str(session_id)})
+        is_v2 = True
+
     if not session:
         raise HTTPException(status_code=404, detail="Class session not found")
-    if session.get("status") != "active":
-        raise HTTPException(status_code=400, detail="This class session is no longer active")
         
-    if student.get("department") != session.get("department"):
-        raise HTTPException(status_code=403, detail="You do not belong to this department's class")
+    if not is_v2:
+        if session.get("status") != "active":
+            raise HTTPException(status_code=400, detail="This class session is no longer active")
+        if student.get("department") != session.get("department"):
+            raise HTTPException(status_code=403, detail="You do not belong to this department's class")
+    else:
+        if session.get("status") != "ONGOING":
+            raise HTTPException(status_code=400, detail="This class session is no longer active")
+        
+        # Verify student belongs to target group for V2
+        target_group_type = session.get("target_group_type")
+        target_group_id = session.get("target_group_id")
+        if target_group_type == "BATCH" and student.get("batch_id") != target_group_id:
+            raise HTTPException(status_code=403, detail="You do not belong to this batch's class")
+        elif target_group_type == "SUB_BATCH" and student.get("sub_batch_id") != target_group_id:
+            raise HTTPException(status_code=403, detail="You do not belong to this sub-batch's class")
+        elif target_group_type == "ELECTIVE" and target_group_id not in student.get("elective_group_ids", []):
+            raise HTTPException(status_code=403, detail="You are not enrolled in this elective group")
 
     geo_policy = await _get_geo_policy(db)
     distance = None
@@ -605,7 +635,7 @@ async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, 
         method="face-self",
         latitude=latitude,
         longitude=longitude,
-        session_id=session_id,
+        session_id=session.get("id"),
         subject=session.get("subject"),
         class_name=session.get("class_name"),
         teacher_name=session.get("teacher_name")

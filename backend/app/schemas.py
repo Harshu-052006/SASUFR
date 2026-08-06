@@ -162,7 +162,7 @@ class ClassSessionOut(BaseModel):
 
 
 class StudentSelfAttendanceRequest(BaseModel):
-    session_id: int
+    session_id: str | int
     image: str
     latitude: float | None = None
     longitude: float | None = None
@@ -208,7 +208,7 @@ class AttendanceOut(BaseModel):
     method: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    session_id: int | None = None
+    session_id: str | int | None = None
     subject: str | None = None
     class_name: str | None = None
     teacher_name: str | None = None

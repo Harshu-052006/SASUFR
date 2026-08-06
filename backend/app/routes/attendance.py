@@ -15,12 +15,10 @@ router = APIRouter(tags=["attendance"])
 @router.get("/attendance/me/stats")
 async def attendance_me_stats(current_user: dict = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_database)):
     stats = await get_student_attendance_stats(db, current_user["id"])
-    total = stats.present_days + stats.absences
-    percentage = round((stats.present_days / total * 100), 1) if total > 0 else 0.0
     return {
         "present_days": stats.present_days,
         "absences": stats.absences,
-        "attendance_percentage": percentage,
+        "attendance_percentage": stats.attendance_percentage,
         "avg_check_in": stats.avg_check_in
     }
 
