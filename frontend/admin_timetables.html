@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings - SmartFace</title>
+    <link rel="stylesheet" href="css/dashboard.css?v=2.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="js/terminology.js?v=2.3"></script>
+</head>
+
+<body class="dashboard-page">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">SmartFace <span>ADMIN</span></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="admin_dashboard.html"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+                    <li><a href="admin_users.html"><i class="fa-solid fa-users-gear"></i> Users</a></li>
+                    <li class="active"><a href="admin_timetables.html"><i class="fa-solid fa-calendar-days"></i>
+                            Timetables</a></li>
+                    <li><a href="admin_reports.html"><i class="fa-solid fa-file-invoice"></i> Reports</a></li>
+                    <li><a href="admin_security.html"><i class="fa-solid fa-shield-halved"></i> Security</a></li>
+                    <li><a href="admin_settings.html"><i class="fa-solid fa-sliders"></i> Settings</a></li>
+                    <li><a href="admin_profile.html"><i class="fa-solid fa-user-shield"></i> Profile</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+
+            <div id="loadingOverlay"
+                style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+                <i class="fa-solid fa-spinner fa-spin"
+                    style="font-size:3rem; color:var(--primary); margin-bottom:1rem;"></i>
+                <h2 style="color:white;">Extracting Timetable Data...</h2>
+                <p style="color:var(--text-dim);">This may take a few seconds.</p>
+            </div>
+
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1 class="glow-text">Timetable Management</h1>
+                    <p style="color: var(--text-dim); font-size: 0.9rem;">Schedule classes for routing banners</p>
+                </div>
+            </header>
+
+            <div class="page-stack admin-page-stack"
+                style="min-height: calc(100vh - 80px); overflow-y: auto; padding: 32px 40px 40px;">
+                <div class="widget-card" style="position: relative; overflow: visible;">
+                    <div class="space-between mb-4">
+                        <h3>Scheduled Classes</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" onclick="openUploadModal()">
+                                <i class="fa-solid fa-upload"></i> Upload Timetable Image
+                            </button>
+                            <button class="btn btn-premium" onclick="openTimetableModal()">
+                                <i class="fa-solid fa-plus"></i> Add Class
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th>DEPARTMENT</th>
+                                    <th>CLASS/YEAR</th>
+                                    <th>SUBJECT</th>
+                                    <th>TEACHER</th>
+                                    <th>DAY</th>
+                                    <th>TIME</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timetablesTableBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="timetableModal" class="modal-overlay">
+                <div class="modal-content profile-modal" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h2>Add Scheduled Class</h2>
+                        <button type="button" class="modal-close-btn" onclick="closeTimetableModal()"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form id="timetableForm" onsubmit="handleTimetableSubmit(event)">
+                        <div class="modal-body">
+                            <div class="admin-form-grid">
+                                <div class="input-group" style="grid-column: 1 / -1;">
+                                    <label>Admin Password Required</label>
+                                    <input type="password" id="ttAdminPassword" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Department</label>
+                                    <select id="ttDepartment" required data-dynamic-departments="true">
+                                        <option value="" disabled selected>Select Department...</option>
+                                        <option value="Administration">Administration</option>
+                                        <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+                                        <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+                                        <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+                                        <option value="Information Technology">Information Technology (IT)</option>
+                                        <option value="Mechanical Engineering">Mechanical Engineering (ME)</option>
+                                        <option value="Civil Engineering">Civil Engineering (CE)</option>
+                                        <option value="AI & Data Science">AI & Data Science (AI & DS)</option>
+                                        <option value="Business Administration">Business Administration (MBA)</option>
+                                        <option value="Computer Applications">Computer Applications (MCA/BCA)</option>
+                                        <option value="Science & Humanities">Science & Humanities (S&H)</option>
+                                        <option value="Pharmacy">Pharmacy</option>
+                                        <option value="Agriculture">Agriculture</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Class/Year</label>
+                                    <input type="text" id="ttClassYear" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Subject</label>
+                                    <input type="text" id="ttSubject" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Teacher ID (Number)</label>
+                                    <input type="number" id="ttTeacherId" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Day of Week</label>
+                                    <select id="ttDay" required>
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                        <option value="Friday">Friday</option>
+                                        <option value="Saturday">Saturday</option>
+                                        <option value="Sunday">Sunday</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Start Time</label>
+                                    <input type="time" id="ttStartTime" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>End Time</label>
+                                    <input type="time" id="ttEndTime" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeTimetableModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Schedule</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Upload Modal -->
+            <div id="uploadModal" class="modal-overlay">
+                <div class="modal-content profile-modal" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h2>Upload Timetable</h2>
+                        <button type="button" class="modal-close-btn" onclick="closeUploadModal()"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form id="uploadForm" onsubmit="handleTimetableUploadSubmit(event)">
+                        <div class="modal-body">
+                            <div class="admin-form-grid" style="grid-template-columns: 1fr;">
+                                <div class="input-group">
+                                    <label>Department (Optional)</label>
+                                    <select id="upDepartment" data-dynamic-departments="true">
+                                        <option value="" selected>Select Department (Optional)</option>
+                                        <option value="Administration">Administration</option>
+                                        <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+                                        <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+                                        <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+                                        <option value="Information Technology">Information Technology (IT)</option>
+                                        <option value="Mechanical Engineering">Mechanical Engineering (ME)</option>
+                                        <option value="Civil Engineering">Civil Engineering (CE)</option>
+                                        <option value="AI & Data Science">AI & Data Science (AI & DS)</option>
+                                        <option value="Business Administration">Business Administration (MBA)</option>
+                                        <option value="Computer Applications">Computer Applications (MCA/BCA)</option>
+                                        <option value="Science & Humanities">Science & Humanities (S&H)</option>
+                                        <option value="Pharmacy">Pharmacy</option>
+                                        <option value="Agriculture">Agriculture</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Class/Year (Optional)</label>
+                                    <input type="text" id="upClassYear" placeholder="e.g. TY-BCA">
+                                </div>
+                                <div class="input-group">
+                                    <label>Timetable Image *</label>
+                                    <input type="file" id="upImage" accept="image/*" required style="padding-top: 10px;">
+                                </div>
+                                <div class="input-group">
+                                    <label>Admin Password *</label>
+                                    <input type="password" id="upAdminPassword" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Extract & Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await window.Api.requireAdmin();
+            if (user) {
+                loadTimetables();
+            }
+        });
+
+        async function loadTimetables() {
+            try {
+                const { resp, data } = await window.Api.apiFetch('/admin/timetables');
+                const tbody = document.getElementById('timetablesTableBody');
+                tbody.innerHTML = '';
+                if (data && data.length > 0) {
+                    data.forEach(tt => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${tt.department}</td>
+                            <td>${tt.class_year}</td>
+                            <td>${tt.subject}</td>
+                            <td>${tt.teacher_name} (ID: ${tt.teacher_id})</td>
+                            <td>${tt.day_of_week}</td>
+                            <td>${tt.start_time} - ${tt.end_time}</td>
+                            <td>
+                                <button class="btn btn-danger" style="padding: 4px 8px; font-size:0.8rem;" onclick="deleteTimetable(${tt.id})">Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No scheduled classes found.</td></tr>';
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+            document.getElementById('uploadForm').reset();
+        }
+
+        async function handleTimetableUploadSubmit(event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('upImage');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const pwd = document.getElementById('upAdminPassword').value;
+            const dept = document.getElementById('upDepartment').value.trim();
+            const year = document.getElementById('upClassYear').value.trim();
+
+            closeUploadModal();
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('admin_password', pwd);
+            if (dept) formData.append('department', dept);
+            if (year) formData.append('class_year', year);
+
+            try {
+                const token = window.Api.getToken();
+                const resp = await fetch('/admin/timetables/extract-image', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    alert('Error: ' + (data.detail || 'Extraction failed'));
+                } else {
+                    alert(`Successfully extracted and inserted ${data.count} classes!`);
+                    loadTimetables();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        function openTimetableModal() {
+            document.getElementById('timetableModal').classList.add('active');
+        }
+
+        function closeTimetableModal() {
+            document.getElementById('timetableModal').classList.remove('active');
+            document.getElementById('timetableForm').reset();
+        }
+
+        async function handleTimetableSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                admin_password: document.getElementById('ttAdminPassword').value,
+                department: document.getElementById('ttDepartment').value,
+                class_year: document.getElementById('ttClassYear').value,
+                subject: document.getElementById('ttSubject').value,
+                teacher_id: parseInt(document.getElementById('ttTeacherId').value),
+                day_of_week: document.getElementById('ttDay').value,
+                start_time: document.getElementById('ttStartTime').value,
+                end_time: document.getElementById('ttEndTime').value
+            };
+
+            try {
+                const { resp, data } = await window.Api.apiFetch('/admin/timetables', {
+                    method: 'POST',
+                    body: payload
+                });
+                if (!resp.ok) {
+                    alert('Error: ' + (data.detail || 'Failed to save'));
+                } else {
+                    alert('Schedule saved successfully');
+                    closeTimetableModal();
+                    loadTimetables();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function deleteTimetable(id) {
+            const pwd = prompt("Enter admin password to confirm deletion:");
+            if (!pwd) return;
+            try {
+                const { resp, data } = await window.Api.apiFetch(`/admin/timetables/${id}`, {
+                    method: 'DELETE',
+                    body: { admin_password: pwd }
+                });
+                if (!resp.ok) {
+                    alert('Error: ' + (data.detail || 'Failed to delete'));
+                } else {
+                    loadTimetables();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

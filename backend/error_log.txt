@@ -1,0 +1,62 @@
+ERROR IN SELF MARK:
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\routes\student.py", line 45, in self_mark_attendance
+    return await mark_student_self_attendance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\services\attendance_service.py", line 553, in mark_student_self_attendance
+    "check_in": saved["check_in"],
+                ~~~~~^^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+ERROR IN SELF MARK:
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\routes\student.py", line 45, in self_mark_attendance
+    return await mark_student_self_attendance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\services\attendance_service.py", line 553, in mark_student_self_attendance
+    "check_in": saved["check_in"],
+                ~~~~~^^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+ERROR IN SELF MARK:
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\routes\student.py", line 45, in self_mark_attendance
+    return await mark_student_self_attendance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\services\attendance_service.py", line 532, in mark_student_self_attendance
+    raise HTTPException(status_code=403, detail="Face does not match your registered identity")
+fastapi.exceptions.HTTPException: 403: Face does not match your registered identity
+ERROR IN SELF MARK:
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\routes\student.py", line 45, in self_mark_attendance
+    return await mark_student_self_attendance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\services\attendance_service.py", line 553, in mark_student_self_attendance
+    "check_in": saved["check_in"],
+                ~~~~~^^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+ERROR IN SELF MARK:
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\routes\student.py", line 45, in self_mark_attendance
+    return await mark_student_self_attendance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\services\attendance_service.py", line 553, in mark_student_self_attendance
+    "check_in": saved["check_in"],
+                ~~~~~^^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+ERROR IN SELF MARK:
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\routes\student.py", line 45, in self_mark_attendance
+    return await mark_student_self_attendance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\services\attendance_service.py", line 553, in mark_student_self_attendance
+    "check_in": saved["check_in"],
+                ~~~~~^^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+ERROR IN SELF MARK:
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\routes\student.py", line 45, in self_mark_attendance
+    return await mark_student_self_attendance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Downloads\Telegram Desktop\Smart-Attendance-System-Using-Face-Recognition-main\backend\app\services\attendance_service.py", line 563, in mark_student_self_attendance
+    "check_in": saved["check_in"],
+                ~~~~~^^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Hub - Smart Attendance System Using Face Recognition</title>
+    <link rel="stylesheet" href="css/dashboard.css?v=2.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="js/terminology.js?v=2.3"></script>
+</head>
+
+<body class="dashboard-page">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">SmartFace <span><span data-term="teacher">TEACHER</span></span></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active"><a href="teacher_dashboard.html"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+                    </li>
+                    <li><a href="teacher_mark_attendance.html"><i class="fa-solid fa-pen-to-square"></i> Manual Override</a>
+                    </li>
+                    <li><a href="teacher_students.html"><i class="fa-solid fa-user-graduate"></i> <span data-term="student_plural">Students</span></a></li>
+                    <li><a href="teacher_view_attendance.html"><i class="fa-solid fa-file-invoice"></i> View
+                            Attendance</a></li>
+                    <li><a href="teacher_reports.html"><i class="fa-solid fa-chart-line"></i> Reports</a></li>
+                    <li><a href="teacher_profile.html"><i class="fa-solid fa-user"></i> Profile</a></li>
+                    <li><a href="teacher_settings.html"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1 class="glow-text">Faculty Hub</h1>
+                    <p style="color: var(--text-dim);">Real-time session monitoring and departmental analytics</p>
+                </div>
+                <div class="header-actions">
+                    <button id="notifyAbsentBtn" class="btn-secondary"
+                        style="border-color: #ff5a6f; color: #ff5a6f; padding: 10px 20px; font-size: 0.75rem;">Absent
+                        Alerts <i class="fa-solid fa-bullhorn"></i></button>
+                    <button id="openStartSessionBtn" class="btn-premium"
+                        style="padding: 10px 20px; font-size: 0.75rem;">Start Class Session <i
+                            class="fa-solid fa-circle-play"></i></button>
+                </div>
+            </header>
+
+            <div class="page-stack">
+                <div id="timetableBannerContainer"></div>
+                <div class="dashboard-grid">
+                    <!-- Row 1 -->
+                    <div class="widget-card large-widget"
+                        style="padding: 0; overflow: hidden; min-height: 360px; background: linear-gradient(135deg, rgba(9, 18, 31, 0.98) 0%, rgba(12, 29, 45, 0.92) 100%); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4);">
+                        <div
+                            style="padding: 28px 32px 24px; display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden;">
+                            <div
+                                style="position: absolute; inset: 0; background: radial-gradient(circle at top right, rgba(0, 209, 199, 0.16), transparent 34%), radial-gradient(circle at bottom left, rgba(111, 69, 255, 0.14), transparent 36%); pointer-events: none;">
+                            </div>
+                            <div style="position: relative; z-index: 1; max-width: 64%;">
+                                <p
+                                    style="color: var(--accent); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 900; margin-bottom: 12px; opacity: 0.85;">
+                                    <span data-term="department">Department</span> Command Center</p>
+                                <h3
+                                    style="font-size: clamp(1.8rem, 2vw, 2.6rem); line-height: 1.05; letter-spacing: -1px; color: var(--text-main); font-weight: 900; margin-bottom: 14px;">
+                                    Attendance Operations</h3>
+                                <p
+                                    style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; max-width: 58ch;">
+                                    Track today's attendance, dispatch absent alerts, and keep the <span data-term="department">department</span> aligned in
+                                    real time from a single, clean control surface.
+                                </p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
+                                    <span id="teacherMeta" class="badge badge-active"
+                                        style="padding: 6px 12px; border-radius: 999px; font-size: 0.58rem; letter-spacing: 1.5px; text-transform: uppercase;">
+                                        <span data-term="department">Department</span>: --
+                                    </span>
+                                    <span class="badge badge-neutral"
+                                        style="padding: 6px 12px; border-radius: 999px; font-size: 0.58rem; letter-spacing: 1.5px;">
+                                        Realtime Sync
+                                    </span>
+                                    <span class="badge badge-neutral"
+                                        style="padding: 6px 12px; border-radius: 999px; font-size: 0.58rem; letter-spacing: 1.5px;">
+                                        Alert Dispatch
+                                    </span>
+                                </div>
+                            </div>
+                            <div
+                                style="position: relative; z-index: 1; min-width: 220px; display: flex; flex-direction: column; gap: 12px; align-items: stretch;">
+                                <button type="button" class="btn-premium"
+                                    id="openStartSessionBtnLarge"
+                                    style="width: 100%; justify-content: center;">
+                                    Start Class Session <i class="fa-solid fa-circle-play"></i>
+                                </button>
+                                <button type="button" class="btn-secondary"
+                                    onclick="window.location.href='teacher_students.html'"
+                                    style="width: 100%; justify-content: center;">
+                                    View <span data-term="student_plural">Students</span> <i class="fa-solid fa-user-graduate"></i>
+                                </button>
+                                <button type="button" class="btn-secondary"
+                                    onclick="window.location.href='teacher_reports.html'"
+                                    style="width: 100%; justify-content: center;">
+                                    Open Reports <i class="fa-solid fa-chart-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="padding: 24px 32px 30px;">
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+                                <div
+                                    style="padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                                    <p
+                                        style="color: var(--text-dim); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 2.5px; font-weight: 900; margin-bottom: 10px;">
+                                        Today</p>
+                                    <strong
+                                        style="display: block; color: var(--text-main); font-size: 1rem; letter-spacing: 0.3px; margin-bottom: 8px;">
+                                        Live attendance summary</strong>
+                                    <p style="color: var(--text-muted); font-size: 0.82rem; line-height: 1.6;">
+                                        Values refresh automatically as scans and manual entries land.
+                                    </p>
+                                </div>
+                                <div
+                                    style="padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                                    <p
+                                        style="color: var(--text-dim); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 2.5px; font-weight: 900; margin-bottom: 10px;">
+                                        Alerts</p>
+                                    <strong
+                                        style="display: block; color: var(--text-main); font-size: 1rem; letter-spacing: 0.3px; margin-bottom: 8px;">
+                                        Absent dispatch</strong>
+                                    <p style="color: var(--text-muted); font-size: 0.82rem; line-height: 1.6;">
+                                        Send notifications again whenever a new absence batch appears.
+                                    </p>
+                                </div>
+                                <div
+                                    style="padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                                    <p
+                                        style="color: var(--text-dim); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 2.5px; font-weight: 900; margin-bottom: 10px;">
+                                        Scope</p>
+                                    <strong
+                                        style="display: block; color: var(--text-main); font-size: 1rem; letter-spacing: 0.3px; margin-bottom: 8px;">
+                                        <span data-term="department">Department</span> bound</strong>
+                                    <p style="color: var(--text-muted); font-size: 0.82rem; line-height: 1.6;">
+                                        Only <span data-term="student_plural">students</span> in the authenticated <span data-term="teacher">teacher</span>'s <span data-term="department">department</span> are shown.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="widget-card"
+                        style="display: flex; flex-direction: column; justify-content: center; text-align: left; border-left: 4px solid var(--accent);">
+                        <p
+                            style="color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 900; margin-bottom: 16px; opacity: 0.6;">
+                            TOTAL_STUDENTS</p>
+                        <h2 id="statTotal"
+                            style="font-size: 5rem; font-weight: 900; color:var(--accent); font-family: var(--font-data); line-height: 0.8; letter-spacing: -2px;">
+                            0</h2>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-top: 24px;">
+                            Total <span data-term="student_plural">students</span> in assigned courses</p>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="widget-card"
+                        style="display: flex; flex-direction: column; justify-content: center; text-align: left; border-left: 4px solid var(--primary);">
+                        <p
+                            style="color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 900; margin-bottom: 16px; opacity: 0.6;">
+                            PRESENT_TODAY</p>
+                        <h2 id="statPresent"
+                            style="font-size: 5rem; font-weight: 900; color:var(--primary); font-family: var(--font-data); line-height: 0.8; letter-spacing: -2px;">
+                            0</h2>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-top: 24px;">
+                            Confirmed attendees</p>
+                    </div>
+
+                    <div class="widget-card"
+                        style="display: flex; flex-direction: column; justify-content: center; text-align: left; border-left: 4px solid #f59e0b;">
+                        <p
+                            style="color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 900; margin-bottom: 16px; opacity: 0.6;">
+                            LATE_TODAY</p>
+                        <h2 id="statLate"
+                            style="font-size: 5rem; font-weight: 900; color:#f59e0b; font-family: var(--font-data); line-height: 0.8; letter-spacing: -2px;">
+                            0</h2>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-top: 24px;">
+                            Punctuality Alert Count</p>
+                    </div>
+
+                    <div class="widget-card"
+                        style="display: flex; flex-direction: column; justify-content: center; text-align: left; border-left: 4px solid #ff5a6f;">
+                        <p
+                            style="color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 900; margin-bottom: 16px; opacity: 0.6;">
+                            ABSENT_TODAY</p>
+                        <h2 id="statAbsent"
+                            style="font-size: 5rem; font-weight: 900; color:#ff5a6f; font-family: var(--font-data); line-height: 0.8; letter-spacing: -2px;">
+                            0</h2>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-top: 24px;">
+                            Unverified <span data-term="student_plural">students</span></p>
+                    </div>
+
+                    <div class="widget-card"
+                        style="display: flex; flex-direction: column; justify-content: space-between; min-height: 240px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); border: 1px solid var(--primary); box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);">
+                        <div class="space-between" style="margin-bottom: 18px;">
+                            <div>
+                                <p
+                                    style="color: var(--text-dim); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 2.5px; font-weight: 900; margin-bottom: 10px;">
+                                    ACTIVE <span data-term="class">CLASS</span> SESSION</p>
+                                <h3 id="activeSessionSubject"
+                                    style="font-size: 1.4rem; color: #fff; letter-spacing: -0.4px; font-weight: 900; font-family: var(--font-data); margin-bottom: 4px;">
+                                    --</h3>
+                                <p id="activeSessionClass" style="font-size: 0.9rem; color: var(--text-dim);">No active session</p>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                                <div id="activeSessionTimer" style="font-family: var(--font-data); font-size: 1.2rem; font-weight: 900; color: var(--accent);">--:--</div>
+                                <span style="font-size: 0.55rem; color: var(--accent); font-weight: 900; letter-spacing: 1px;">TIME REMAINING</span>
+                            </div>
+                        </div>
+                        <div style="display: grid; gap: 14px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                <span
+                                    style="color: var(--text-dim); font-size: 0.72rem; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800;">Realtime Sync</span>
+                                <span style="color: var(--accent); font-weight: 800; font-size: 0.78rem;">ON</span>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                <span
+                                    style="color: var(--text-dim); font-size: 0.72rem; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800;"><span data-term="department">Department</span> Scope</span>
+                                <span style="color: var(--primary); font-weight: 800; font-size: 0.78rem;">PINNED</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span
+                                    style="color: var(--text-dim); font-size: 0.72rem; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800;">Alert Queue</span>
+                                <span style="color: var(--status-late); font-weight: 800; font-size: 0.78rem;">READY</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Full Width Registry -->
+                    <div class="widget-card full-width-widget" style="padding: 0;">
+                        <div class="space-between"
+                            style="padding: 24px 32px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01);">
+                            <h3
+                                style="font-size: 1.1rem; font-weight: 900; letter-spacing: 1px; color: var(--text-main); text-transform: uppercase;">
+                                EXCEPTION-FIRST <span data-term="student">STUDENT</span> LIST</h3>
+                            <button class="btn-secondary" onclick="window.location.reload()"
+                                style="font-size: 0.7rem; padding: 10px 20px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: var(--text-main); font-weight: 800; letter-spacing: 1px; transition: 0.3s; cursor: pointer;">
+                                <i class="fa-solid fa-rotate" style="margin-right: 10px; color: var(--accent);"></i>
+                                REFRESH RECORDS
+                            </button>
+                        </div>
+                        <div class="table-container" style="border: none; border-radius: 0;">
+                            <table id="teacherTodayTable">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 20px 32px; text-align: left; color: var(--text-dim); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; font-weight: 800;"><span data-term="student">Student</span></th>
+                                        <th style="padding: 20px 32px; text-align: center; color: var(--text-dim); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; font-weight: 800;">Match Confidence</th>
+                                        <th style="padding: 20px 32px; text-align: center; color: var(--text-dim); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; font-weight: 800;">System Status</th>
+                                        <th style="padding: 20px 32px; text-align: right; color: var(--text-dim); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; font-weight: 800;">Manual Override</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Exception Rows at top -->
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); background: rgba(239, 68, 68, 0.03);" class="hover-lift">
+                                        <td style="padding: 16px 32px; display: flex; align-items: center; gap: 16px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--status-absent); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--status-absent); font-size: 0.8rem;">JS</div>
+                                            <div>
+                                                <div style="font-weight: 800; color: #fff; font-size: 0.85rem;">John Smith</div>
+                                                <div class="data-font" style="font-size: 0.65rem; color: var(--text-dim);">ID: 2024-1011</div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: center;">
+                                            <span class="data-font" style="color: var(--status-absent); font-weight: 900;">UNMARKED</span>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: center;">
+                                            <span class="frosted-badge" style="padding: 6px 10px; font-size: 0.65rem; border-radius: 6px; color: var(--status-absent); font-weight: 800;">ABSENT</span>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: right;">
+                                            <button class="btn-premium hover-lift" style="padding: 8px 16px; font-size: 0.65rem; min-height: auto; border-radius: 6px; font-weight: 800; background: rgba(99, 102, 241, 0.2); border: 1px solid var(--primary); color: #fff; box-shadow: none;">[Mark Present]</button>
+                                        </td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); background: rgba(245, 158, 11, 0.03);" class="hover-lift">
+                                        <td style="padding: 16px 32px; display: flex; align-items: center; gap: 16px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); border: 1px solid var(--status-late); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--status-late); font-size: 0.8rem;">EK</div>
+                                            <div>
+                                                <div style="font-weight: 800; color: #fff; font-size: 0.85rem;">Emily Khan</div>
+                                                <div class="data-font" style="font-size: 0.65rem; color: var(--text-dim);">ID: 2024-1052</div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: center;">
+                                            <span class="data-font" style="color: var(--status-late); font-weight: 900;">62.4% (LOW)</span>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: center;">
+                                            <span class="frosted-badge" style="padding: 6px 10px; font-size: 0.65rem; border-radius: 6px; color: var(--status-late); font-weight: 800;">NEEDS VERIFICATION</span>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: right;">
+                                            <button class="btn-premium hover-lift" style="padding: 8px 16px; font-size: 0.65rem; min-height: auto; border-radius: 6px; font-weight: 800; background: rgba(99, 102, 241, 0.2); border: 1px solid var(--primary); color: #fff; box-shadow: none;">[Mark Present]</button>
+                                        </td>
+                                    </tr>
+                                    <!-- Regular row below -->
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);" class="hover-lift">
+                                        <td style="padding: 16px 32px; display: flex; align-items: center; gap: 16px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--status-present); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--status-present); font-size: 0.8rem;">MG</div>
+                                            <div>
+                                                <div style="font-weight: 800; color: #fff; font-size: 0.85rem;">Maria Garcia</div>
+                                                <div class="data-font" style="font-size: 0.65rem; color: var(--text-dim);">ID: 2024-1029</div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: center;">
+                                            <span class="data-font" style="color: var(--status-present); font-weight: 900;">99.8%</span>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: center;">
+                                            <span class="frosted-badge" style="padding: 6px 10px; font-size: 0.65rem; border-radius: 6px; color: var(--status-present); font-weight: 800;">PRESENT</span>
+                                        </td>
+                                        <td style="padding: 16px 32px; text-align: right;">
+                                            <button class="btn-secondary" style="padding: 8px 16px; font-size: 0.65rem; min-height: auto; border-radius: 6px; opacity: 0.5;" disabled>Recorded</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+            </div>
+
+            <!-- Start Session Modal -->
+            <div id="startSessionModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(7, 14, 28, 0.95); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(10px);">
+                <div class="modal-content widget-card" style="width: 100%; max-width: 400px; padding: 0; border: 1px solid var(--glass-border); display: flex; flex-direction: column;">
+                    <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="color: #fff; font-weight: 900; letter-spacing: 2px; font-size: 1rem;"><i class="fa-solid fa-play" style="color: var(--accent); margin-right: 8px;"></i> START SESSION</h3>
+                        <button id="closeSessionModalBtn" style="background: transparent; border: none; color: var(--text-dim); font-size: 1.2rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <label style="display: block; color: var(--text-dim); font-size: 0.75rem; font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Subject Name</label>
+                            <input type="text" id="sessionSubject" placeholder="e.g. Data Structures" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: #fff;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-dim); font-size: 0.75rem; font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Class/Section Name</label>
+                            <div style="position: relative;">
+                                <select id="sessionClass" data-dynamic-classes="true" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: #fff; appearance: none; cursor: pointer;">
+                                    <option value="" disabled selected>Select Class</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); pointer-events: none;"></i>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; color: var(--text-dim); font-size: 0.75rem; font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Lecture Start Time</label>
+                                <input type="time" id="lectureStartTime" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: #fff;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; color: var(--text-dim); font-size: 0.75rem; font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Lecture End Time</label>
+                                <input type="time" id="lectureEndTime" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: #fff;">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding: 24px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <button id="confirmStartSessionBtn" class="btn-premium" style="width: 100%; padding: 16px;">START 30-MIN SESSION</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/teacher.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for Api to be ready
+            setTimeout(() => {
+                const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+                if (currentUser && currentUser.department) {
+                    document.getElementById('teacherMeta').innerHTML = `<span data-term="department">Department</span>: ${currentUser.department}`;
+                }
+            }, 500);
+
+            // Active session logic
+            async function fetchActiveSessions() {
+                try {
+                    const { resp, data } = await Api.apiFetch('/teacher/sessions/active');
+                    if (resp.ok && data && data.length > 0) {
+                        const session = data[0];
+                        document.getElementById('activeSessionSubject').textContent = session.subject;
+                        let classText = session.class_name;
+                        if (session.lecture_start_time && session.lecture_end_time) {
+                            classText += ` (${session.lecture_start_time} - ${session.lecture_end_time})`;
+                        }
+                        document.getElementById('activeSessionClass').textContent = classText;
+                        
+                        const startTime = new Date(session.start_time);
+                        const endTime = new Date(startTime.getTime() + 30 * 60000);
+                        
+                        function updateTimer() {
+                            const now = new Date();
+                            const diff = endTime - now;
+                            if (diff <= 0) {
+                                document.getElementById('activeSessionTimer').textContent = "EXPIRED";
+                                document.getElementById('activeSessionSubject').textContent = "--";
+                                document.getElementById('activeSessionClass').textContent = "No active session";
+                            } else {
+                                const mins = Math.floor(diff / 60000);
+                                const secs = Math.floor((diff % 60000) / 1000);
+                                document.getElementById('activeSessionTimer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                            }
+                        }
+                        updateTimer();
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch active sessions", e);
+                }
+            }
+            fetchActiveSessions();
+
+            // Modal logic
+            const modal = document.getElementById('startSessionModal');
+            const openBtns = [document.getElementById('openStartSessionBtn'), document.getElementById('openStartSessionBtnLarge')];
+            const closeBtn = document.getElementById('closeSessionModalBtn');
+            const confirmBtn = document.getElementById('confirmStartSessionBtn');
+
+            openBtns.forEach(btn => {
+                if(btn) btn.addEventListener('click', () => modal.style.display = 'flex');
+            });
+
+            if(closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'none');
+
+            if(confirmBtn) confirmBtn.addEventListener('click', async () => {
+                const subject = document.getElementById('sessionSubject').value.trim();
+                const className = document.getElementById('sessionClass').value.trim();
+                const lectureStart = document.getElementById('lectureStartTime').value;
+                const lectureEnd = document.getElementById('lectureEndTime').value;
+                if (!subject || !className || !lectureStart || !lectureEnd) {
+                    alert("Please fill in Subject, Class Name, and Lecture Times.");
+                    return;
+                }
+
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = "STARTING...";
+
+                const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+                try {
+                    const { resp, data } = await Api.apiFetch('/teacher/sessions/start', {
+                        method: 'POST',
+                        body: {
+                            subject: subject,
+                            class_name: className,
+                            department: currentUser.department || "General",
+                            lecture_start_time: lectureStart,
+                            lecture_end_time: lectureEnd
+                        }
+                    });
+                    
+                    if (!resp.ok) {
+                        throw new Error(data.detail || 'Failed to start session');
+                    }
+                    
+                    alert("Session started successfully. Students have 30 minutes to mark attendance.");
+                    modal.style.display = 'none';
+                    fetchActiveSessions();
+                } catch (e) {
+                    alert(e.message);
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = "START 30-MIN SESSION";
+                }
+            });
+
+            document.getElementById('notifyAbsentBtn')?.addEventListener('click', async () => {
+                if (!confirm("Are you sure you want to dispatch absent alerts to all unmarked students in your department?")) return;
+                const btn = document.getElementById('notifyAbsentBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dispatching...';
+
+                try {
+                    const { resp, data } = await Api.apiFetch('/teacher/notifications/absent', { method: 'POST' });
+                    if (!resp.ok) {
+                        throw new Error(data.detail || data.message || 'Failed to dispatch alerts.');
+                    }
+                    alert(data.message || "Alerts successfully dispatched.");
+                } catch (err) {
+                    alert(err.message || "Failed to dispatch alerts.");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

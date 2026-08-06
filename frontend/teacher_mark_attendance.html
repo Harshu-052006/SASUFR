@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Override - SmartFace</title>
+    <link rel="stylesheet" href="css/dashboard.css?v=2.0">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="js/terminology.js?v=2.3"></script>
+</head>
+
+<body class="dashboard-page overflow-hidden">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">SmartFace <span><span data-term="teacher">TEACHER</span></span></div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="teacher_dashboard.html"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+                    <li class="active"><a href="teacher_mark_attendance.html"><i class="fa-solid fa-pen-to-square"></i> Manual Override</a></li>
+                    <li><a href="teacher_students.html"><i class="fa-solid fa-user-graduate"></i> <span data-term="student_plural">Students</span></a></li>
+                    <li><a href="teacher_view_attendance.html"><i class="fa-solid fa-file-invoice"></i> View
+                            Attendance</a></li>
+                    <li><a href="teacher_reports.html"><i class="fa-solid fa-chart-line"></i> Reports</a></li>
+                    <li><a href="teacher_profile.html"><i class="fa-solid fa-user"></i> Profile</a></li>
+                    <li><a href="teacher_settings.html"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="user-welcome">
+                    <h1 class="glow-text" style="font-size: 1.8rem;">Manual Override</h1>
+                    <p style="color: var(--text-dim); font-size: 0.9rem;">Manually record student attendance for edge cases (e.g. absent/broken phone)</p>
+                </div>
+                <div class="header-actions">
+                    <div
+                        style="background: rgba(255,255,255,0.03); padding: 8px 16px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-building-columns" style="color: var(--secondary);"></i>
+                        <span id="teacherDept"
+                            style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted);">DEPT: ---</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-stack">
+                <div class="dashboard-grid">
+                    <!-- Manual Tools -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; width: 100%;">
+                        <!-- Recently Marked -->
+                        <div class="widget-card" style="flex: 1; border-left: 4px solid var(--accent); display: flex; flex-direction: column;">
+                            <div class="space-between" style="margin-bottom: 24px;">
+                                <h3 style="font-size: 0.75rem; font-weight: 900; letter-spacing: 2px; color: #fff;">
+                                    LIVE_ACTIVITY_FEED</h3>
+                                <span class="marked-badge" id="scanCounter">COUNT: 0</span>
+                            </div>
+                            <div id="scanLogContainer"
+                                style="flex: 1; min-height: 140px; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 8px;">
+                                <p id="initialLogMsg"
+                                    style="font-size: 0.65rem; color: var(--text-dim); text-align: center; margin-top: 40px; font-weight: 800; opacity: 0.4; letter-spacing: 2px;">
+                                    AWAITING_IDENTIFICATION...</p>
+                                <!-- Mock Feed Item -->
+                                <div class="frosted-badge hover-lift" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; border-left: 3px solid var(--status-present);">
+                                    <div>
+                                        <div style="font-size: 0.75rem; font-weight: 800; color: #fff;">Rahul Sharma</div>
+                                        <div class="data-font" style="font-size: 0.65rem; color: var(--text-dim);">12:14:02 PM</div>
+                                    </div>
+                                    <div class="data-font" style="font-size: 0.75rem; color: var(--status-present); font-weight: 900;">98.4%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Marking -->
+                        <div class="widget-card" style="border-left: 4px solid var(--secondary);">
+                            <h3
+                                style="font-size: 0.75rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 24px; color: #fff;">
+                                MANUAL_OVERRIDE</h3>
+
+                            <div class="form-group" style="margin-bottom: 24px;">
+                                <label
+                                    style="font-size: 0.6rem; color: var(--text-dim); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; display: block;">TARGET_STUDENT_ID</label>
+                                <select id="m_studentSelect"
+                                    style="width: 100%; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); color: #fff; padding: 12px; border-radius: 8px; font-weight: 800; font-size: 0.75rem;">
+                                    <option value="">-- SELECT IDENTITY --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 32px;">
+                                <label
+                                    style="font-size: 0.6rem; color: var(--text-dim); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; display: block;">ATTENDANCE_METRIC</label>
+                                <div class="status-segmented">
+                                    <button class="status-btn active" data-status="present">PRESENT</button>
+                                    <button class="status-btn" data-status="late">LATE</button>
+                                    <button class="status-btn" data-status="absent">ABSENT</button>
+                                </div>
+                            </div>
+
+                            <button id="manualMarkBtn" class="btn-premium"
+                                style="width: 100%; padding: 16px; font-weight: 900; font-size: 0.75rem; letter-spacing: 2px; background: rgba(111, 69, 255, 0.1); border: 1px solid var(--secondary); color: var(--secondary);">
+                                CONFIRM_MANUAL_ENTRY <i class="fa-solid fa-fingerprint" style="margin-left: 10px;"></i>
+                            </button>
+                            <p id="m_statusMsg"
+                                style="margin-top: 16px; font-size: 0.65rem; font-weight: 900; text-align: center; color: var(--accent);">
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: Full Registry (Hidden/Optional if not in image, but good for UX) -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/teacher.js"></script>
+</body>
+
+</html>
