@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.Api.logout();
         };
     }
-
     initMobileNavigation();
 });
 
@@ -47,41 +46,49 @@ function initMobileNavigation() {
     const topBar = document.querySelector('.top-bar');
     if (!sidebar || !topBar) return;
 
-    let toggleBtn = document.querySelector('.mobile-nav-toggle');
+    let toggleBtn = document.querySelector('.mobile-sidebar-toggle');
     if (!toggleBtn) {
         toggleBtn = document.createElement('button');
-        toggleBtn.className = 'mobile-nav-toggle';
-        toggleBtn.setAttribute('aria-label', 'Toggle navigation menu');
-        toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'mobile-sidebar-toggle';
+        toggleBtn.setAttribute('aria-label', 'Toggle navigation');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
         topBar.insertBefore(toggleBtn, topBar.firstChild);
     }
 
-    let overlay = document.querySelector('.mobile-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'mobile-overlay';
-        document.body.appendChild(overlay);
-    }
-
-    const toggleMenu = (show) => {
-        const isOpen = show !== undefined ? show : !sidebar.classList.contains('mobile-open');
-        sidebar.classList.toggle('mobile-open', isOpen);
-        overlay.classList.toggle('active', isOpen);
-        toggleBtn.innerHTML = isOpen ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+    const setOpenState = (open) => {
+        document.body.classList.toggle('sidebar-open', open);
+        toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggleBtn.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
     };
 
-    toggleBtn.onclick = (e) => {
+    toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleMenu();
-    };
+        setOpenState(!document.body.classList.contains('sidebar-open'));
+    });
 
-    overlay.onclick = () => toggleMenu(false);
+    document.addEventListener('click', (e) => {
+        if (!document.body.classList.contains('sidebar-open')) return;
+        if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-sidebar-toggle')) {
+            setOpenState(false);
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setOpenState(false);
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) {
+            setOpenState(false);
+        }
+    });
 
     sidebar.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => toggleMenu(false));
+        link.addEventListener('click', () => setOpenState(false));
     });
 }
-
 
 function startPolling(fn, interval = 15000) {
     if (__refreshTimer) clearInterval(__refreshTimer);
