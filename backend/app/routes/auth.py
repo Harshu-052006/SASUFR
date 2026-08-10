@@ -9,10 +9,10 @@ from ..limiter import limiter
 from ..database.mongo import get_database
 from ..dependencies import get_current_user
 from ..models import ROLE_ADMIN, ROLE_STUDENT, ROLE_TEACHER
-from ..schemas import ChangePasswordRequest, LoginRequest, OTPRequest, OTPVerifyRequest, Token, UserCreate, UserOut, UserProfileUpdate, ForgotPasswordRequest, ResetPasswordRequest
+from ..schemas import ChangePasswordRequest, LoginRequest, OTPRequest, OTPVerifyRequest, Token, UserCreate, UserOut, UserProfileUpdate, ForgotPasswordRequest, ResetPasswordRequest, LivenessChallengeResponse
 from ..services.attendance_service import serialize_attendance
 from ..services.email_service import get_last_mail_error, send_password_changed, send_registration_success, send_otp_email, send_password_reset_otp_email
-from ..services.face_service import extract_encoding, find_best_match, verify_liveness
+from ..services.face_service import extract_encoding, find_best_match, verify_liveness_sequence, generate_liveness_challenge_sequence
 from ..services.security_service import log_security_event
 from ..services.user_service import (
     create_access_token_for_user,
@@ -53,6 +53,12 @@ def _security_account_snapshot(user: dict, *, is_active: bool | None = None, blo
     elif user.get("blocked_reason"):
         snapshot["blocked_reason"] = user.get("blocked_reason")
     return snapshot
+
+
+@router.get("/liveness-challenge", response_model=LivenessChallengeResponse)
+async def get_liveness_challenge():
+    session_id, challenges = generate_liveness_challenge_sequence()
+    return {"session_id": session_id, "challenges": challenges}
 
 
 @router.post("/register")
@@ -103,8 +109,8 @@ async def register(
     if not payload.department or not payload.department.strip():
         raise HTTPException(status_code=400, detail="Department is required")
 
-    if payload.liveness_challenge:
-        await verify_liveness(payload.face_image, payload.liveness_challenge)
+    if payload.liveness_session_id and payload.liveness_frames:
+        await verify_liveness_sequence(payload.liveness_session_id, payload.liveness_frames)
 
     face_encoding = await extract_encoding(payload.face_image)
     existing_faces = []

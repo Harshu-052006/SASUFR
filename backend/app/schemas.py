@@ -34,7 +34,8 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(min_length=6)
     face_image: str
-    liveness_challenge: str | None = None
+    liveness_session_id: str | None = None
+    liveness_frames: list[str] | None = None
     requested_role: str = "student"
     id_card_image: str | None = None
 
@@ -127,7 +128,8 @@ class MarkAttendanceRequest(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     attendance_status: str | None = None
-    liveness_challenge: str | None = None
+    liveness_session_id: str | None = None
+    liveness_frames: list[str] | None = None
 
 
 class ClassSessionCreate(BaseModel):
@@ -166,7 +168,8 @@ class StudentSelfAttendanceRequest(BaseModel):
     image: str
     latitude: float | None = None
     longitude: float | None = None
-    liveness_challenge: str | None = None
+    liveness_session_id: str | None = None
+    liveness_frames: list[str] | None = None
 
 
 class UserOut(BaseModel):
@@ -309,6 +312,11 @@ class UserStatusReport(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class LivenessChallengeResponse(BaseModel):
+    session_id: str
+    challenges: list[str]
 
 
 class AdminConfig(BaseModel):
