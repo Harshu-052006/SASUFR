@@ -36,6 +36,7 @@ class Settings:
     max_distance_km: float = float(os.getenv("MAX_DISTANCE_KM", "3.0"))
     late_hour: int = int(os.getenv("LATE_HOUR", "9"))
     late_minute: int = int(os.getenv("LATE_MINUTE", "30"))
+    grace_period_minutes: int = int(os.getenv("GRACE_PERIOD_MINUTES", "10"))
     absent_notice_hour: int = int(os.getenv("ABSENT_NOTICE_HOUR", "17"))
     absent_notice_minute: int = int(os.getenv("ABSENT_NOTICE_MINUTE", "0"))
     absent_notifications_enabled: bool = os.getenv("ABSENT_NOTIFICATIONS_ENABLED", "true").lower() == "true"

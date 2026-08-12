@@ -326,6 +326,7 @@ class AdminConfig(BaseModel):
     max_distance_km: float
     late_hour: int
     late_minute: int
+    grace_period_minutes: int
     absent_notice_hour: int
     absent_notice_minute: int
     mfa_enabled: bool = False
@@ -345,6 +346,7 @@ class AdminConfigUpdate(BaseModel):
     max_distance_km: float | None = None
     late_hour: int | None = None
     late_minute: int | None = None
+    grace_period_minutes: int | None = None
     absent_notice_hour: int | None = None
     absent_notice_minute: int | None = None
     mfa_enabled: bool | None = None
