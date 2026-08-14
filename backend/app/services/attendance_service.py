@@ -410,7 +410,7 @@ async def _insert_or_update_attendance(
     method: str, 
     latitude: float | None, 
     longitude: float | None,
-    session_id: int | None = None,
+    session_id: str | int | None = None,
     subject: str | None = None,
     class_name: str | None = None,
     teacher_name: str | None = None
@@ -554,6 +554,44 @@ async def get_active_class_sessions(
     sessions = []
     async for doc in db.class_sessions.find(query):
         sessions.append(serialize_attendance(doc))
+        
+    department_teachers = await db.users.find(
+        {"department": department, "role": "teacher"}
+    ).to_list(length=None)
+    
+    if not department_teachers:
+        return sessions
+        
+    teacher_ids = [t["id"] for t in department_teachers]
+    teacher_names = {t["id"]: t.get("full_name") or t.get("email") for t in department_teachers}
+
+    # 3. Fetch V2 (session_logs)
+    query_v2 = {"status": "ONGOING", "teacher_id": {"$in": teacher_ids}}
+    if enrolled_subjects is not None and len(enrolled_subjects) > 0:
+        query_v2["subject"] = {"$in": enrolled_subjects}
+        
+    async for doc in db.session_logs.find(query_v2):
+        teacher_id = doc["teacher_id"]
+        # Normalize V2 schema into V1 ClassSessionOut shape
+        normalized = {
+            "id": doc["id"],
+            "subject": doc["subject"],
+            "class_name": f"{doc.get('target_group_type', '')} {doc.get('target_group_id', '')}".strip(),
+            "department": department,
+            "course_id": None,
+            "academic_year": None,
+            "batch_id": doc.get("target_group_id") if doc.get("target_group_type") == "BATCH" else None,
+            "teacher_id": teacher_id,
+            "teacher_name": teacher_names.get(teacher_id, f"Teacher {teacher_id}"),
+            "status": "active",  # Map V2 "ONGOING" to V1 "active" so frontend logic holds
+            "start_time": doc.get("actual_start_time"),
+            "end_time": doc.get("actual_end_time"),
+            "lecture_start_time": None,
+            "lecture_end_time": None,
+            "created_at": doc.get("actual_start_time")
+        }
+        sessions.append(normalized)
+
     return sessions
 
 
