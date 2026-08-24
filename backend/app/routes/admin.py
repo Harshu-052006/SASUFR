@@ -543,22 +543,27 @@ async def admin_import_students(file: UploadFile = File(...), current_user: dict
                 
         # Insert direct users
         for u in direct_users:
-            if u["id"] is None:
-                # Fetch next sequence if ID is not provided
-                from pymongo import ReturnDocument
-                seq_doc = await db.counters.find_one_and_update(
-                    {"_id": "users"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
-                )
-                u["id"] = int(seq_doc["seq"])
+            existing_user = await db.users.find_one({"email": u["email"]})
+            if existing_user:
+                # Preserve the existing ID to maintain foreign key integrity
+                u["id"] = existing_user["id"]
+            else:
+                if u["id"] is None:
+                    # Fetch next sequence if ID is not provided
+                    from pymongo import ReturnDocument
+                    seq_doc = await db.counters.find_one_and_update(
+                        {"_id": "users"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
+                    )
+                    u["id"] = int(seq_doc["seq"])
+                else:
+                    # Ensure counter is at least the custom specified ID to prevent future collisions
+                    await db.counters.update_one(
+                        {"_id": "users"},
+                        {"$max": {"seq": u["id"]}},
+                        upsert=True
+                    )
             
             await db.users.update_one({"email": u["email"]}, {"$set": u}, upsert=True)
-            
-        # Update counter if max_id was provided
-        if max_id > -1:
-            seq_doc = await db.counters.find_one({"_id": "users"})
-            current_seq = int(seq_doc["seq"]) if seq_doc and "seq" in seq_doc else 0
-            if max_id > current_seq:
-                await db.counters.update_one({"_id": "users"}, {"$set": {"seq": max_id}}, upsert=True)
                 
         # Insert valid students whitelist
         for s in valid_students:
