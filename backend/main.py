@@ -41,7 +41,7 @@ from app.utils.time import iso_ist
 
 
 BASE_DIR = Path(__file__).resolve().parent
-FRONTEND_DIR = BASE_DIR.parent / "frontend"
+FRONTEND_DIR = BASE_DIR.parent / "frontend" / "dist"
 
 # ── Startup validation ────────────────────────────────────────────────────────
 _INSECURE_KEYS = {"change-me-in-production", "change-this-secret", "", "your-secret-key"}
@@ -112,18 +112,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
-    app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
-    app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
+if (FRONTEND_DIR / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="assets")
 
 
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    icon_file = FRONTEND_DIR / "favicon.svg"
-    if icon_file.exists():
-        return FileResponse(icon_file, media_type="image/svg+xml")
-    return Response(status_code=204)
 
 
 async def _absent_notices_worker() -> None:
@@ -191,12 +183,6 @@ async def _absent_notices_worker() -> None:
             await asyncio.sleep(60)
 
 
-@app.get("/")
-async def root():
-    index_file = FRONTEND_DIR / "index.html"
-    if index_file.exists():
-        return RedirectResponse(url="/static/index.html")
-    return {"message": "Smart Attendance System Using Face Recognition API is operational."}
 
 
 @app.get("/health")
@@ -258,6 +244,19 @@ app.include_router(timetable_router)
 app.include_router(hierarchy_router)
 app.include_router(batch_router)
 app.include_router(electives_router)
+
+@app.get("/{catchall:path}")
+async def serve_spa(catchall: str):
+    if catchall:
+        file_path = FRONTEND_DIR / catchall
+        if file_path.is_file():
+            return FileResponse(file_path)
+    
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+        
+    return {"message": "Smart Attendance System Using Face Recognition API is operational."}
 
 
 if __name__ == "__main__":

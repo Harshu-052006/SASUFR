@@ -171,7 +171,7 @@ async def send_absent_notice(email: str, student_name: str, date_label: str) -> 
     title = "Attendance Notification"
     name = student_name or 'Student'
     content = f"Hello {name},<br><br>This is an automated telemetry report to inform you that your presence was <b>not detected</b> during the scheduled session on <b>{date_label}</b>. If this is a mismatch, please submit a synchronization request to your teacher."
-    html = _get_premium_template(title, content, "VIEW_HISTORY", f"{_frontend_url('user_dashboard.html')}#attendance-history")
+    html = _get_premium_template(title, content, "VIEW_HISTORY", f"{_frontend_url('user-dashboard')}#attendance-history")
     return await send_email(email, f"Smart Attendance System Using Face Recognition - {title}", f"Notification: You were marked absent on {date_label}.", html)
 
 
@@ -191,14 +191,14 @@ async def send_password_reset_otp_email(email: str, otp: str) -> bool:
 async def send_upcoming_lecture_notice(email: str, teacher_name: str, subject: str, class_details: str, time: str) -> bool:
     title = "Upcoming Lecture Reminder"
     content = f"Hello {teacher_name},<br><br>This is a reminder that you have an upcoming lecture for <b>{subject}</b> ({class_details}) starting at <b>{time}</b>.<br>Please log into the Faculty Hub to start the session."
-    html = _get_premium_template(title, content, "OPEN FACULTY HUB", _frontend_url('teacher_dashboard.html'))
+    html = _get_premium_template(title, content, "OPEN FACULTY HUB", _frontend_url('teacher-dashboard'))
     return await send_email(email, f"Smart Attendance System Using Face Recognition - {title}", f"Reminder: Lecture for {subject} at {time}.", html)
 
 async def send_lecture_commenced_notice(email: str, student_name: str, subject: str, class_details: str, teacher_name: str) -> bool:
     title = "Lecture Commenced"
     name = student_name or 'Student'
     content = f"Hello {name},<br><br>Your lecture for <b>{subject}</b> ({class_details}) with <b>{teacher_name}</b> has just commenced.<br>Please open the Student Portal to mark your attendance via facial recognition."
-    html = _get_premium_template(title, content, "MARK ATTENDANCE", _frontend_url('user_dashboard.html'))
+    html = _get_premium_template(title, content, "MARK ATTENDANCE", _frontend_url('user-dashboard'))
     return await send_email(email, f"Smart Attendance System - {subject} Started", f"Lecture for {subject} has commenced.", html)
 
 

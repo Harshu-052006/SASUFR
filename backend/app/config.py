@@ -19,7 +19,7 @@ class Settings:
 
     mongodb_uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     mongodb_db: str = os.getenv("MONGODB_DB", "smart_attendance")
-    frontend_base_url: str = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000/static")
+    frontend_base_url: str = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000")
 
     mail_username: str | None = os.getenv("MAIL_USERNAME")
     mail_password: str | None = os.getenv("MAIL_PASSWORD")
