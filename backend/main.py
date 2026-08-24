@@ -113,9 +113,19 @@ app.add_middleware(
 )
 
 if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
-    app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
-    app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
+    # If using Vite React build, static files are in 'dist'
+    dist_dir = FRONTEND_DIR / "dist"
+    if dist_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(dist_dir / "assets")), name="assets")
+        # Optional: mount root static files if any exist directly in dist
+    else:
+        app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    
+    # Mount legacy directories only if they exist
+    if (FRONTEND_DIR / "css").exists():
+        app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
+    if (FRONTEND_DIR / "js").exists():
+        app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -193,6 +203,10 @@ async def _absent_notices_worker() -> None:
 
 @app.get("/")
 async def root():
+    dist_index = FRONTEND_DIR / "dist" / "index.html"
+    if dist_index.exists():
+        return FileResponse(dist_index)
+        
     index_file = FRONTEND_DIR / "index.html"
     if index_file.exists():
         return RedirectResponse(url="/static/index.html")
@@ -258,6 +272,17 @@ app.include_router(timetable_router)
 app.include_router(hierarchy_router)
 app.include_router(batch_router)
 app.include_router(electives_router)
+
+# Mount the same routers under /api for the new React frontend (Vite dev server or built bundle)
+app.include_router(auth_router, prefix="/api")
+app.include_router(attendance_router, prefix="/api")
+app.include_router(teacher_router, prefix="/api")
+app.include_router(student_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
+app.include_router(timetable_router, prefix="/api")
+app.include_router(hierarchy_router, prefix="/api")
+app.include_router(batch_router, prefix="/api")
+app.include_router(electives_router, prefix="/api")
 
 
 if __name__ == "__main__":
