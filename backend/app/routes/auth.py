@@ -210,6 +210,10 @@ async def login(request: Request, response: Response, payload: LoginRequest, db:
 
 
 @router.post("/verify-otp")
+# OTP brute-forcing/spam protection: Limit verification attempts per IP to 5/minute.
+# A rate limit of 5/minute per IP balances allowing legitimate multiple signups from shared NATs/campus wifi
+# while preventing high-frequency brute-forcing or bot spamming.
+@limiter.limit("5/minute")
 async def verify_otp(
     payload: OTPVerifyRequest,
     background_tasks: BackgroundTasks,
@@ -366,6 +370,10 @@ async def forgot_password_endpoint(
 
 
 @router.post("/reset-password")
+# OTP brute-forcing/spam protection: Limit verification attempts per IP to 5/minute.
+# A rate limit of 5/minute per IP balances allowing legitimate multiple signups from shared NATs/campus wifi
+# while preventing high-frequency brute-forcing or bot spamming.
+@limiter.limit("5/minute")
 async def reset_password_endpoint(
     payload: ResetPasswordRequest,
     background_tasks: BackgroundTasks,
