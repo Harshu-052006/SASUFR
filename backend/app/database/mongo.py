@@ -54,11 +54,12 @@ async def _backfill_missing_ids(collection_name: str) -> None:
 
 
 async def ensure_indexes() -> None:
-    for collection_name in ("users", "attendance", "security_logs", "class_sessions"):
+    for collection_name in ("users", "attendance", "security_logs", "class_sessions", "profile_change_requests"):
         await _sync_counter_to_collection_max(collection_name)
         await _backfill_missing_ids(collection_name)
 
     await database.users.create_index([("id", ASCENDING)], unique=True)
+    await database.profile_change_requests.create_index([("id", ASCENDING)], unique=True)
     await database.users.create_index([("email", ASCENDING)], unique=True)
     await database.users.create_index([("roll_number", ASCENDING)], unique=True)
     await database.users.create_index([("role", ASCENDING), ("department", ASCENDING)])
