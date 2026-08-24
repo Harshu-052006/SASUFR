@@ -25,6 +25,7 @@ def serialize_user(user: dict):
         return user
     user = dict(user)
     user.pop("_id", None)
+    user.pop("face_encoding", None)
     return user
 
 

@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from .config import settings
 from .database.mongo import get_database
 from .schemas import TokenData
-from .services.user_service import get_user_by_email, serialize_user
+from .services.user_service import get_user_by_email
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login", auto_error=False)
@@ -43,7 +43,9 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
         raise credentials_exception
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account is deactivated. Contact admin.")
-    return serialize_user(user)
+    user = dict(user)
+    user.pop("_id", None)
+    return user
 
 
 def require_role(*allowed_roles: str):
