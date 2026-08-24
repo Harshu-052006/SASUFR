@@ -494,6 +494,17 @@ async def start_class_session(
     lecture_start_time: str,
     lecture_end_time: str
 ) -> dict:
+    existing_session = await db.class_sessions.find_one({
+        "teacher_id": teacher["id"],
+        "department": department,
+        "class_name": class_name,
+        "batch_id": batch_id,
+        "course_id": course_id,
+        "status": "active"
+    })
+    if existing_session:
+        raise HTTPException(status_code=409, detail="An active session for this class is already running.")
+
     session_id = await _next_id(db, "class_sessions")
     session = {
         "id": session_id,

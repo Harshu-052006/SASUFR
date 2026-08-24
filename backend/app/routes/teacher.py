@@ -84,6 +84,16 @@ async def start_session_v2(
     from app.services.email_service import send_lecture_commenced_notice
     import asyncio
     
+    existing_session = await db.session_logs.find_one({
+        "teacher_id": current_user["id"],
+        "target_group_type": target_group_type,
+        "target_group_id": target_group_id,
+        "subject": subject,
+        "status": "ONGOING"
+    })
+    if existing_session:
+        raise HTTPException(status_code=409, detail="An active session for this class is already running.")
+    
     session_id = str(uuid.uuid4())
     doc = {
         "id": session_id,
