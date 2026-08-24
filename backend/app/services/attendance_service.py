@@ -547,14 +547,16 @@ async def get_active_class_sessions(
     department: str,
     enrolled_subjects: list[str] | None = None
 ) -> list[dict]:
-    query = {"department": department, "status": "active"}
+    # 1. Fetch V1 (class_sessions)
+    query_v1 = {"department": department, "status": "active"}
     if enrolled_subjects is not None and len(enrolled_subjects) > 0:
-        query["subject"] = {"$in": enrolled_subjects}
+        query_v1["subject"] = {"$in": enrolled_subjects}
         
     sessions = []
-    async for doc in db.class_sessions.find(query):
+    async for doc in db.class_sessions.find(query_v1):
         sessions.append(serialize_attendance(doc))
-        
+
+    # 2. Fetch Teachers in this department (needed to filter V2 sessions)
     department_teachers = await db.users.find(
         {"department": department, "role": "teacher"}
     ).to_list(length=None)
