@@ -47,6 +47,7 @@ async def self_mark_attendance(
             db,
             student=current_user,
             session_id=payload.session_id,
+            room_code=payload.room_code,
             image=payload.image,
             latitude=payload.latitude,
             longitude=payload.longitude,

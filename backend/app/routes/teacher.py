@@ -9,7 +9,7 @@ from ..database.mongo import get_database
 from ..dependencies import get_current_user
 from ..utils.time import date_key
 from ..models import ROLE_TEACHER
-from ..schemas import TeacherStats, TeacherAttendanceRow, MarkAttendanceRequest, ManualAttendanceRequest, UserOut, ClassSessionCreate, ClassSessionOut
+from ..schemas import TeacherStats, TeacherAttendanceRow, MarkAttendanceRequest, ManualAttendanceRequest, UserOut, ClassSessionCreate, ClassSessionOut, TeacherClassSessionOut
 from ..services.attendance_service import (
     get_teacher_stats, 
     get_teacher_today_rows, 
@@ -94,6 +94,9 @@ async def start_session_v2(
     if existing_session:
         raise HTTPException(status_code=409, detail="An active session for this class is already running.")
     
+    import secrets
+    room_code = str(secrets.randbelow(1000000)).zfill(6)
+    
     session_id = str(uuid.uuid4())
     doc = {
         "id": session_id,
@@ -104,7 +107,8 @@ async def start_session_v2(
         "target_group_type": target_group_type,
         "target_group_id": target_group_id,
         "actual_start_time": iso_ist(),
-        "status": "ONGOING"
+        "status": "ONGOING",
+        "room_code": room_code
     }
     
     await db.session_logs.insert_one(doc)
@@ -175,7 +179,7 @@ async def get_my_students(
     return await get_teacher_department_students(db, current_user, unmarked_only=unmarked_only)
 
 
-@router.post("/teacher/sessions/start", response_model=ClassSessionOut)
+@router.post("/teacher/sessions/start", response_model=TeacherClassSessionOut)
 async def start_session(
     payload: ClassSessionCreate,
     current_user: dict = Depends(_require_teacher),
@@ -197,7 +201,7 @@ async def start_session(
     )
 
 
-@router.get("/teacher/sessions/active", response_model=list[ClassSessionOut])
+@router.get("/teacher/sessions/active", response_model=list[TeacherClassSessionOut])
 async def active_sessions(
     current_user: dict = Depends(_require_teacher),
     db: AsyncIOMotorDatabase = Depends(get_database)

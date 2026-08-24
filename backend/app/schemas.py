@@ -160,9 +160,13 @@ class ClassSessionOut(BaseModel):
     lecture_end_time: str | None = None
     created_at: str | None = None
 
+class TeacherClassSessionOut(ClassSessionOut):
+    room_code: str | None = None
+
 
 class StudentSelfAttendanceRequest(BaseModel):
     session_id: str | int
+    room_code: str
     image: str
     latitude: float | None = None
     longitude: float | None = None

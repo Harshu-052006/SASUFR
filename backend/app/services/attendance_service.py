@@ -505,6 +505,9 @@ async def start_class_session(
     if existing_session:
         raise HTTPException(status_code=409, detail="An active session for this class is already running.")
 
+    import secrets
+    room_code = str(secrets.randbelow(1000000)).zfill(6)
+    
     session_id = await _next_id(db, "class_sessions")
     session = {
         "id": session_id,
@@ -519,6 +522,7 @@ async def start_class_session(
         "teacher_id": teacher["id"],
         "teacher_name": teacher.get("full_name") or teacher.get("email"),
         "status": "active",
+        "room_code": room_code,
         "start_time": iso_ist(),
         "end_time": None,
         "created_at": iso_ist()
@@ -601,14 +605,15 @@ async def get_active_class_sessions(
             "end_time": doc.get("actual_end_time"),
             "lecture_start_time": None,
             "lecture_end_time": None,
-            "created_at": doc.get("actual_start_time")
+            "created_at": doc.get("actual_start_time"),
+            "room_code": doc.get("room_code")
         }
         sessions.append(normalized)
 
     return sessions
 
 
-async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, session_id: str | int, image: str, latitude: float | None, longitude: float | None, liveness_challenge: str | None = None) -> dict:
+async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, session_id: str | int, room_code: str, image: str, latitude: float | None, longitude: float | None, liveness_challenge: str | None = None) -> dict:
     if not student.get("is_active"):
         raise HTTPException(status_code=403, detail="Account is deactivated")
         
@@ -654,6 +659,25 @@ async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, 
             raise HTTPException(status_code=403, detail="You do not belong to this sub-batch's class")
         elif target_group_type == "ELECTIVE" and target_group_id not in student.get("elective_group_ids", []):
             raise HTTPException(status_code=403, detail="You are not enrolled in this elective group")
+
+    # Rate Limiting: Check for previous failed attempts
+    attempt_record = await db.room_code_attempts.find_one({
+        "student_id": student["id"],
+        "session_id": session["id"]
+    })
+    
+    if attempt_record and attempt_record.get("attempts", 0) >= 5:
+        raise HTTPException(status_code=429, detail="Too many incorrect room code attempts. You are locked out of marking attendance for this session.")
+
+    # Validate Room Code
+    if session.get("room_code") and str(session.get("room_code")).strip().lower() != room_code.strip().lower():
+        # Increment failed attempts
+        await db.room_code_attempts.update_one(
+            {"student_id": student["id"], "session_id": session["id"]},
+            {"$inc": {"attempts": 1}},
+            upsert=True
+        )
+        raise HTTPException(status_code=403, detail="Incorrect room code for this session")
 
     geo_policy = await _get_geo_policy(db)
     distance = None
