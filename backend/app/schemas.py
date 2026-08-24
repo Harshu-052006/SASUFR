@@ -237,6 +237,8 @@ class AdminStats(BaseModel):
     absent_today: int
     attendance_percentage: float = 0.0
     system_status: str
+    email_status: str = "ok"
+    email_error: str | None = None
 
 
 class TeacherStats(BaseModel):

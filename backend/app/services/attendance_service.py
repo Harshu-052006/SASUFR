@@ -1062,13 +1062,24 @@ async def get_admin_stats(db: AsyncIOMotorDatabase) -> dict:
     day_finalized = _attendance_day_completed(bool(today_records))
     absent_today = max(0, total_students - present_today) if day_finalized else explicit_absent_today
     attendance_percentage = round((present_today / total_students * 100), 1) if total_students else 0.0
+
+    # Read email status from configuration
+    config_doc = await db.config.find_one({"_id": "global"})
+    email_status = "ok"
+    email_error = None
+    if config_doc:
+        email_status = config_doc.get("email_status", "ok")
+        email_error = config_doc.get("email_error")
+
     return {
         "total_users": total_users, 
         "total_students": total_students,
         "present_today": present_today, 
         "absent_today": absent_today,
         "attendance_percentage": attendance_percentage,
-        "system_status": "Online"
+        "system_status": "Online",
+        "email_status": email_status,
+        "email_error": email_error
     }
 
 

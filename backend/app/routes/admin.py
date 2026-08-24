@@ -16,7 +16,7 @@ from ..dependencies import get_current_user
 from ..models import ROLE_ADMIN
 from ..schemas import AdminAccountCreate, AdminDeleteRequest, AdminResetPasswordRequest, AdminSetActiveRequest, AdminStats, AdminUserUpdateRequest, TeacherCreate, UserOut, WeeklyReport, PunctualityReport, UserStatusReport, AdminConfig, AdminConfigUpdate, FacultyAttendanceReport, MonitoringLocation, MonthlyAttendanceSummary, AdminBulkUpdateClassYearRequest
 from ..services.attendance_service import get_admin_stats, serialize_attendance, get_recent_attendance_logs, get_attendance_report_rows, get_monthly_attendance_summary_rows
-from ..services.email_service import send_password_changed
+from ..services.email_service import send_password_changed, check_smtp_connectivity
 from ..services.security_service import log_security_event, get_security_logs
 from ..services.user_service import create_teacher_user, delete_user, get_user_by_id, require_admin_password, reset_password, serialize_user, set_active_status, admin_update_user
 from ..services.user_service import create_admin_user, get_user_by_email
@@ -163,6 +163,25 @@ async def update_admin_config(payload: AdminConfigUpdate, current_user: dict = D
         metadata=update_data
     )
     return {"message": "System configuration updated successfully."}
+
+
+@router.post("/admin/config/check-smtp")
+async def admin_check_smtp(
+    current_user: dict = Depends(_require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    success, err = await check_smtp_connectivity()
+    status = "ok" if success else "failing"
+    await db.config.update_one(
+        {"_id": "global"},
+        {"$set": {
+            "email_status": status,
+            "email_error": err,
+            "email_status_checked_at": iso_ist()
+        }},
+        upsert=True
+    )
+    return {"success": success, "error": err}
 
 @router.get("/admin/stats", response_model=AdminStats)
 async def admin_stats(current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
