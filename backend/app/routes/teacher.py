@@ -239,6 +239,57 @@ async def mark_manual_attendance(
         latitude=payload.latitude,
         longitude=payload.longitude
     )
+@router.patch("/teacher/attendance/{record_id}/mark-left")
+async def mark_left_early(
+    record_id: int,
+    current_user: dict = Depends(_require_teacher),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    from app.utils.time import iso_ist
+    
+    # 1. Lookup attendance record
+    record = await db.attendance.find_one({"id": record_id})
+    if not record:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+        
+    session_id = record.get("session_id")
+    if session_id is None:
+        raise HTTPException(status_code=400, detail="Attendance record is not associated with any session")
+        
+    # 2. Lookup session to confirm ownership and active status
+    if isinstance(session_id, int):
+        # V1 session
+        session = await db.class_sessions.find_one({"id": session_id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        if session.get("teacher_id") != current_user["id"]:
+            raise HTTPException(status_code=403, detail="You do not own this session")
+        if session.get("status") != "active":
+            raise HTTPException(status_code=400, detail="This session is no longer active")
+    else:
+        # V2 session
+        session = await db.session_logs.find_one({"id": session_id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        if session.get("teacher_id") != current_user["id"]:
+            raise HTTPException(status_code=403, detail="You do not own this session")
+        if session.get("status") != "ONGOING":
+            raise HTTPException(status_code=400, detail="This session is no longer active")
+            
+    # 3. Update the record
+    timestamp = iso_ist()
+    await db.attendance.update_one(
+        {"id": record_id},
+        {"$set": {
+            "status": "Absent",
+            "left_early": True,
+            "updated_at": timestamp,
+            "check_out": timestamp
+        }}
+    )
+    
+    return {"message": "Student marked as left early", "record_id": record_id}
+
 
 
 @router.get("/teacher/attendance/export")
