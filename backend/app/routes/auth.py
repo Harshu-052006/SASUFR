@@ -26,7 +26,7 @@ from ..services.user_service import (
     update_user_profile,
 )
 from ..utils.security import generate_otp, hash_password, otp_hash, otp_salt, verify_otp as verify_otp_hash
-from ..utils.time import iso_ist, now_ist
+from ..utils.time import iso_ist, get_campus_now
 
 
 router = APIRouter(tags=["auth"])
@@ -230,7 +230,7 @@ async def verify_otp(
             expires_dt = datetime.fromisoformat(expires_at)
         except Exception:
             expires_dt = None
-        if expires_dt and now_ist() > expires_dt:
+        if expires_dt and get_campus_now() > expires_dt:
             raise HTTPException(status_code=400, detail="Verification code has expired. Please request a new code.")
 
     if not verify_otp_hash(payload.otp, otp_salt(), otp_hash_value):
@@ -340,7 +340,7 @@ async def forgot_password_endpoint(
         {
             "$set": {
                 "otp_hash": otp_hash(otp, otp_salt()),
-                "otp_expires_at": (now_ist() + timedelta(minutes=10)).isoformat(),
+                "otp_expires_at": (get_campus_now() + timedelta(minutes=10)).isoformat(),
                 "updated_at": iso_ist()
             }
         }
@@ -387,7 +387,7 @@ async def reset_password_endpoint(
             expires_dt = datetime.fromisoformat(expires_at)
         except Exception:
             expires_dt = None
-        if expires_dt and now_ist() > expires_dt:
+        if expires_dt and get_campus_now() > expires_dt:
             raise HTTPException(status_code=400, detail="Verification code has expired. Please request a new code.")
             
     if not verify_otp_hash(payload.otp, otp_salt(), otp_hash_value):

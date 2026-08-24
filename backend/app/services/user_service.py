@@ -10,7 +10,7 @@ from ..config import settings
 from ..models import ROLE_ADMIN, ROLE_STUDENT, ROLE_TEACHER, VALID_ROLES
 from ..schemas import AdminAccountCreate, AdminUserUpdateRequest, TeacherCreate, UserCreate, UserProfileUpdate
 from ..utils.security import create_access_token, hash_password, otp_hash, otp_salt, verify_password
-from ..utils.time import iso_ist, now_ist
+from ..utils.time import iso_ist, get_campus_now
 
 
 def _normalize_role(role: str | None, is_admin: bool = False) -> str:
@@ -59,7 +59,7 @@ async def create_registered_user(db: AsyncIOMotorDatabase, payload: UserCreate, 
         "role": role,
         "department": payload.department.strip() if payload.department else None,
         "otp_hash": otp_hash(otp, otp_salt()),
-        "otp_expires_at": (now_ist() + timedelta(minutes=10)).isoformat(),
+        "otp_expires_at": (get_campus_now() + timedelta(minutes=10)).isoformat(),
         "face_encoding": face_encoding,
         "face_image": payload.face_image,
         "id_card_image": payload.id_card_image,
@@ -201,7 +201,7 @@ async def mark_verified(db: AsyncIOMotorDatabase, user: dict) -> None:
 async def resend_otp(db: AsyncIOMotorDatabase, user: dict, otp: str) -> None:
     await db.users.update_one(
         {"id": user["id"]},
-        {"$set": {"otp_hash": otp_hash(otp, otp_salt()), "otp_expires_at": (now_ist() + timedelta(minutes=10)).isoformat(), "updated_at": iso_ist()}},
+        {"$set": {"otp_hash": otp_hash(otp, otp_salt()), "otp_expires_at": (get_campus_now() + timedelta(minutes=10)).isoformat(), "updated_at": iso_ist()}},
     )
 async def update_user_profile(db: AsyncIOMotorDatabase, user_id: int, payload: UserProfileUpdate) -> dict:
     updates: dict = {}
