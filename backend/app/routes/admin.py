@@ -304,7 +304,7 @@ async def admin_reset_password(user_id: int, payload: AdminResetPasswordRequest,
     target = await get_user_by_id(db, user_id)
     if not target:
         raise HTTPException(status_code=404, detail="Account not found.")
-    await reset_password(db, target)
+    temp_password = await reset_password(db, target)
     await log_security_event(
         db,
         event_type="ADMIN_RESET_PASSWORD",
@@ -315,7 +315,7 @@ async def admin_reset_password(user_id: int, payload: AdminResetPasswordRequest,
         ip_address=None,
         user_agent=None,
     )
-    return {"message": "Password reset successfully", "temporary_password": "SASUFR"}
+    return {"message": "Password reset successfully", "temporary_password": temp_password}
 
 
 @router.delete("/admin/users/{user_id}")

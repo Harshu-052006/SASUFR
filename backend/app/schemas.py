@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    must_change_password: bool = False
 
 
 class TokenData(BaseModel):
@@ -74,6 +75,10 @@ class OTPRequest(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
+    new_password: str = Field(min_length=6)
+
+
+class SetNewPasswordRequest(BaseModel):
     new_password: str = Field(min_length=6)
 
 
@@ -193,6 +198,7 @@ class UserOut(BaseModel):
     preferences: dict = {}
     created_at: str | None = None
     updated_at: str | None = None
+    must_change_password: bool = False
 
 
 class AttendanceOut(BaseModel):

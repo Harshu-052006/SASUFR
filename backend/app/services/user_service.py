@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import secrets
 
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -144,7 +145,14 @@ async def update_password(db: AsyncIOMotorDatabase, user: dict, current_password
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     await db.users.update_one(
         {"id": user["id"]},
-        {"$set": {"hashed_password": hash_password(new_password), "updated_at": iso_ist()}},
+        {"$set": {"hashed_password": hash_password(new_password), "must_change_password": False, "updated_at": iso_ist()}},
+    )
+
+
+async def force_set_password(db: AsyncIOMotorDatabase, user: dict, new_password: str) -> None:
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"hashed_password": hash_password(new_password), "must_change_password": False, "updated_at": iso_ist()}},
     )
 
 
@@ -175,11 +183,18 @@ async def set_active_status(db: AsyncIOMotorDatabase, user_id: int, is_active: b
     await db.users.update_one({"id": int(user_id)}, {"$set": updates})
 
 
-async def reset_password(db: AsyncIOMotorDatabase, user: dict, temp_password: str = "SASUFR") -> None:
+async def reset_password(db: AsyncIOMotorDatabase, user: dict, temp_password: str | None = None) -> str:
+    if not temp_password:
+        temp_password = secrets.token_urlsafe(12)
     await db.users.update_one(
         {"id": user["id"]},
-        {"$set": {"hashed_password": hash_password(temp_password), "updated_at": iso_ist()}},
+        {"$set": {
+            "hashed_password": hash_password(temp_password),
+            "must_change_password": True,
+            "updated_at": iso_ist()
+        }},
     )
+    return temp_password
 
 
 async def delete_user(db: AsyncIOMotorDatabase, user_id: int) -> None:

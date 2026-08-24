@@ -43,6 +43,11 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
         raise credentials_exception
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account is deactivated. Contact admin.")
+    if user.get("must_change_password"):
+        path = request.url.path.rstrip("/")
+        allowed_paths = {"/users/me", "/users/me/change-password", "/users/me/set-new-password", "/logout"}
+        if path not in allowed_paths:
+            raise HTTPException(status_code=403, detail="Password change required")
     return serialize_user(user)
 
 
