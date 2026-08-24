@@ -622,6 +622,14 @@ async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, 
             raise HTTPException(status_code=400, detail="This class session is no longer active")
         if student.get("department") != session.get("department"):
             raise HTTPException(status_code=403, detail="You do not belong to this department's class")
+        
+        # Verify student belongs to target group for V1 if specified
+        if session.get("course_id") and student.get("course_id") != session.get("course_id"):
+            raise HTTPException(status_code=403, detail="You do not belong to this course's class")
+        if session.get("batch_id") and student.get("batch_id") != session.get("batch_id"):
+            raise HTTPException(status_code=403, detail="You do not belong to this batch's class")
+        if session.get("academic_year") and student.get("academic_year") != session.get("academic_year"):
+            raise HTTPException(status_code=403, detail="You do not belong to this academic year's class")
     else:
         if session.get("status") != "ONGOING":
             raise HTTPException(status_code=400, detail="This class session is no longer active")
