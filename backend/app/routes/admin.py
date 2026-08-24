@@ -19,10 +19,11 @@ from ..services.attendance_service import get_admin_stats, serialize_attendance,
 from ..services.email_service import send_password_changed
 from ..services.security_service import log_security_event, get_security_logs
 from ..services.user_service import create_teacher_user, delete_user, get_user_by_id, require_admin_password, reset_password, serialize_user, set_active_status, admin_update_user
-from ..services.user_service import create_admin_user, get_user_by_email
+from ..services.user_service import create_admin_user, get_user_by_email, create_registered_user
 from ..services.report_service import generate_excel_report, generate_pdf_report
-from ..utils.time import date_key, iso_ist, now_ist
+from ..utils.time import date_key, iso_ist, now_ist, get_campus_now, time_key
 from ..utils.security import hash_password
+from ..utils.roll_number import extract_roll_sequence
 from ..config import settings
 
 router = APIRouter(tags=["admin"])
@@ -488,6 +489,7 @@ async def admin_import_students(file: UploadFile = File(...), current_user: dict
         valid_students = []
         direct_users = []
         max_id = -1
+        max_roll_seq = -1
         
         for row in reader:
             # Normalize keys to lowercase and strip
@@ -506,6 +508,11 @@ async def admin_import_students(file: UploadFile = File(...), current_user: dict
             user_id = int(user_id_str) if user_id_str.isdigit() else None
             if user_id is not None and user_id > max_id:
                 max_id = user_id
+                
+            if roll_number:
+                seq_val = extract_roll_sequence(roll_number)
+                if seq_val > max_roll_seq:
+                    max_roll_seq = seq_val
             
             if not email:
                 continue
@@ -550,6 +557,13 @@ async def admin_import_students(file: UploadFile = File(...), current_user: dict
                     {"_id": "users"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
                 )
                 u["id"] = int(seq_doc["seq"])
+                
+            if not u.get("roll_number"):
+                from pymongo import ReturnDocument
+                roll_seq = await db.counters.find_one_and_update(
+                    {"_id": "roll_numbers"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
+                )
+                u["roll_number"] = f"STU-{int(roll_seq['seq']):05d}"
             
             await db.users.update_one({"email": u["email"]}, {"$set": u}, upsert=True)
             
@@ -559,6 +573,13 @@ async def admin_import_students(file: UploadFile = File(...), current_user: dict
             current_seq = int(seq_doc["seq"]) if seq_doc and "seq" in seq_doc else 0
             if max_id > current_seq:
                 await db.counters.update_one({"_id": "users"}, {"$set": {"seq": max_id}}, upsert=True)
+                
+        # Update counter if max_roll_seq was found in manual inputs
+        if max_roll_seq > -1:
+            seq_doc = await db.counters.find_one({"_id": "roll_numbers"})
+            current_roll_seq = int(seq_doc["seq"]) if seq_doc and "seq" in seq_doc else 0
+            if max_roll_seq > current_roll_seq:
+                await db.counters.update_one({"_id": "roll_numbers"}, {"$set": {"seq": max_roll_seq}}, upsert=True)
                 
         # Insert valid students whitelist
         for s in valid_students:
