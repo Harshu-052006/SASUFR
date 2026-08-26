@@ -114,8 +114,10 @@ app.add_middleware(
 
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
-    app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
-    app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
+    if (FRONTEND_DIR / "css").exists():
+        app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
+    if (FRONTEND_DIR / "js").exists():
+        app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -248,6 +250,8 @@ from app.routes.timetable import router as timetable_router
 from app.routes.hierarchy import router as hierarchy_router
 from app.routes.batch import router as batch_router
 from app.routes.electives import router as electives_router
+from app.routes.hod import router as hod_router
+from app.routes.announcements import router as announcements_router
 
 app.include_router(auth_router)
 app.include_router(attendance_router)
@@ -258,6 +262,8 @@ app.include_router(timetable_router)
 app.include_router(hierarchy_router)
 app.include_router(batch_router)
 app.include_router(electives_router)
+app.include_router(hod_router)
+app.include_router(announcements_router)
 
 
 if __name__ == "__main__":

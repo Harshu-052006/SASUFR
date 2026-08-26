@@ -14,6 +14,19 @@ class TokenData(BaseModel):
     email: str | None = None
 
 
+class AnnouncementCreate(BaseModel):
+    message: str
+    expires_at: str
+
+class AnnouncementOut(BaseModel):
+    id: int | str
+    department: str
+    message: str
+    created_by: int | str
+    created_at: str
+    expires_at: str
+
+
 class UserBase(BaseModel):
     full_name: str | None = None
     email: EmailStr
