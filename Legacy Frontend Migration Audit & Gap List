@@ -1,0 +1,102 @@
+# Legacy Frontend Migration Audit & Gap List
+
+This document covers STEP 1 (Audit) and STEP 2 (Gap List) of the legacy vanilla JS to React migration process. 
+
+## User Review Required
+
+Please review the Audit and Gap List below. Does this accurately capture all the pages and features you expect to be ported? Note the "Complex Feature Handling" section outlining how camera and location services will be migrated. 
+
+**Once you approve this plan, I will begin STEP 3 (Migrating the codebase).**
+
+---
+
+## STEP 1 — AUDIT
+
+### Auth Flow
+| Page | Purpose | Distinct Features | API Endpoints | Existing in `frontend/`? |
+|---|---|---|---|---|
+| `index.html` | Landing | Hero, branding, entry points | `/health` | Yes (`Landing.tsx`) |
+| `login.html` | Login | Email/password form, role routing | `/login`, `/users/me` | Yes (`Login.tsx`) |
+| `register.html` | Registration | Multi-step/long form, validation | `/register` | No |
+| `otp.html` | Verification | OTP input, resend timer | `/verify-otp`, `/resend-otp` | No |
+| `privacy_policy.html` | Policy | Static text | None | No |
+
+*(Note: `/forgot-password` and `/reset-password` were handled in the legacy JS and will be added to the auth flow).*
+
+### Student Flow
+| Page | Purpose | Distinct Features | API Endpoints | Existing in `frontend/`? |
+|---|---|---|---|---|
+| `user_dashboard.html` | Student Hub | Active session widget, **Camera/GPS modal for face capture**, circular gauge, interactive calendar | `/student/attendance/self-mark`, `/student/stats`, `/timetable/active-sessions`, `/timetable/today` | No |
+| `user_profile.html` | Student Identity | **Virtual ID Card generator**, profile info | `/users/me` | No |
+| `user_settings.html` | Preferences | Change password, preferences | `/users/me/change-password` | No |
+
+### Teacher Flow
+| Page | Purpose | Distinct Features | API Endpoints | Existing in `frontend/`? |
+|---|---|---|---|---|
+| `teacher_dashboard.html` | Teacher Hub | Active sessions, absent notifications, start session logic | `/teacher/dashboard-stats`, `/teacher/sessions/active`, `/teacher/sessions/start`, `/teacher/notifications/absent` | No |
+| `teacher_mark_attendance.html` | Manual Override | Select student, mark manually, **live activity feed** of scans | `/teacher/attendance/today` | No |
+| `teacher_students.html` | Students List | List students in dept | `/teacher/department/stats` | No |
+| `teacher_view_attendance.html` | View Attendance | Detailed attendance grids | (various) | No |
+| `teacher_reports.html` | Reports | Analytics, charts | (various) | No |
+| `teacher_profile.html` | Teacher Profile | Identity details | `/users/me` | No |
+| `teacher_settings.html` | Preferences | Change password | `/users/me/change-password` | No |
+
+### Admin Flow
+| Page | Purpose | Distinct Features | API Endpoints | Existing in `frontend/`? |
+|---|---|---|---|---|
+| `admin_dashboard.html` | Admin Hub | Overview stats, activity logs | `/admin/stats`, `/admin/logs` | Yes (`Dashboard.tsx`) |
+| `admin_users.html` | User Mgmt | Table, add/edit, **file upload** for bulk import | `/admin/users`, `/admin/import_students`, `/admin/users/bulk-update-class-year` | Yes (`Students.tsx`) |
+| `admin_reports.html` | Reports | Analytics, filters | `/admin/reports/weekly`, `/admin/reports/faculty` | Yes (`Reports.tsx`) |
+| `admin_settings.html` | Configuration | Settings forms | `/admin/config` | Yes (`Settings.tsx`) |
+| `admin_profile.html` | Admin Identity| Profile info | `/users/me` | Yes (`Profile.tsx`) |
+| `admin_security.html` | Security | Pending approvals, security logs | `/admin/pending_approvals`, `/admin/approve`, `/admin/security-logs` | No |
+| `admin_timetables.html`| Timetables | Timetable management | `/admin/timetables` | No |
+
+---
+
+## STEP 2 — GAP LIST
+
+Prioritized list of what's missing in `frontend/` and needs to be built:
+
+### 1. Auth Flow
+- **`Register.tsx`**: Registration form.
+- **`Otp.tsx`**: OTP input with countdown timer.
+- **`PrivacyPolicy.tsx`**: Static content.
+- **Password Reset**: Modals/Pages for forgot and reset password logic.
+
+### 2. Student Flow (High Priority)
+- **`student/Dashboard.tsx`**:
+  - **Webcam & Geolocation**: Critical feature. Needs `navigator.mediaDevices.getUserMedia` & `navigator.geolocation` integration for the "SCAN BIOMETRICS NOW" face capture modal.
+  - **Live Polling**: Active session polling and countdown timer.
+  - **Interactive Calendar**: Monthly view for attendance history.
+- **`student/Profile.tsx`**:
+  - **Virtual ID Card**: Dynamic generation of ID card.
+- **`student/Settings.tsx`**: Change password logic.
+
+### 3. Teacher Flow (High Priority)
+- **`teacher/Dashboard.tsx`**:
+  - **Real-time**: Start active sessions and poll for active sessions / absent notifications.
+- **`teacher/MarkAttendance.tsx`**:
+  - Manual override form with a **live activity feed** of biometric scans.
+- **`teacher/Students.tsx`**, **`teacher/ViewAttendance.tsx`**, **`teacher/Reports.tsx`**: Data tables, grids, and charts.
+- **`teacher/Profile.tsx`**, **`teacher/Settings.tsx`**: Standard forms.
+
+### 4. Admin Flow
+- **`admin/Security.tsx`**: Security logs and pending approval logic.
+- **`admin/Timetables.tsx`**: Timetable management interface.
+
+### Complex Feature Handling Strategy
+- **Webcam/Location**: Create a robust `CameraModal` component to safely request permissions, handle video stream mounting/unmounting, and prevent memory leaks. 
+- **Real-time Polling**: Use standard React hooks (e.g., `useEffect` with `setInterval`) combined with the `apiFetch` proxy utility to maintain live active session tracking.
+- **Layout & Routing**: Create dedicated protected route wrappers (`<StudentRoute>`, `<TeacherRoute>`, `<AdminRoute>`) mirroring the legacy `auth.js` roles, ensuring role-based redirects post-login.
+
+---
+
+## STEP 3 — PROPOSED MIGRATION EXECUTION
+Once approved, I will sequentially:
+1. Update `App.tsx` and configure protected routing for `Student`, `Teacher`, and `Admin`.
+2. Build the Auth missing pages (`Register`, `Otp`).
+3. Build the `Student Dashboard` (Camera, GPS, Calendar features).
+4. Build all `Teacher` pages.
+5. Finish the remaining `Admin` pages.
+6. Verify styling (Shadcn + indigo accent), endpoint integration, and responsive behavior across all new pages.

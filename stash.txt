@@ -1,0 +1,20 @@
+﻿diff --git a/frontend/src/pages/student/Dashboard.tsx b/frontend/src/pages/student/Dashboard.tsx
+index 311cd80..91977f1 100644
+--- a/frontend/src/pages/student/Dashboard.tsx
++++ b/frontend/src/pages/student/Dashboard.tsx
+@@ -11,6 +11,7 @@ import {
+ } from "../../components/ui/dialog";
+ import { apiFetch } from "../../lib/api";
+ import { Loader2, Camera, MapPin, Radio, AlertCircle } from "lucide-react";
++import { AnnouncementBanner } from "../../components/AnnouncementBanner";
+ 
+ export function Dashboard() {
+   const [stats, setStats] = useState<any>(null);
+@@ -155,6 +156,7 @@ export function Dashboard() {
+   return (
+     <DashboardLayout title="Student Overview">
+       <div className="max-w-7xl mx-auto space-y-8">
++        <AnnouncementBanner />
+         
+         {/* Active Sessions Banner */}
+         {activeSessions.length > 0 && (
