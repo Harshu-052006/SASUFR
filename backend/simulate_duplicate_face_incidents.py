@@ -67,17 +67,19 @@ async def simulate_incidents() -> None:
     if len(students) < INCIDENTS_TO_CREATE * 2:
         raise RuntimeError("Not enough active seeded students to simulate duplicate incidents")
 
+    from app.services.crypto import encrypt_encoding
     created = 0
     for idx in range(INCIDENTS_TO_CREATE):
         old_user = students[idx * 2]
         present_user = students[idx * 2 + 1]
         vector = _face_vector(seed=20260410 + idx)
+        encrypted_vector = encrypt_encoding(vector)
 
         await database.users.update_one(
             {"id": int(old_user["id"])},
             {
                 "$set": {
-                    "face_encoding": vector,
+                    "face_encoding": encrypted_vector,
                     "is_active": False,
                     "blocked_reason": "BIOMETRIC_DUPLICATION_ATTEMPT",
                     "updated_at": iso_ist(),
@@ -89,7 +91,7 @@ async def simulate_incidents() -> None:
             {"id": int(present_user["id"])},
             {
                 "$set": {
-                    "face_encoding": vector,
+                    "face_encoding": encrypted_vector,
                     "updated_at": iso_ist(),
                 }
             },

@@ -40,8 +40,19 @@ class VectorStore:
         vectors = []
         ids = []
         
+        total_attempted = 0
+        failed_decryption = 0
+        
         async for user in cursor:
-            encoding = user.get("face_encoding")
+            total_attempted += 1
+            from .crypto import decrypt_encoding
+            try:
+                encoding = decrypt_encoding(user.get("face_encoding"))
+            except Exception as e:
+                logger.error(f"Error decrypting face encoding for user {user.get('id')}: {e}")
+                failed_decryption += 1
+                continue
+                
             if not encoding or len(encoding) != self.dimension:
                 continue
             
@@ -52,6 +63,12 @@ class VectorStore:
             np_vectors = np.array(vectors, dtype=np.float32)
             np_ids = np.array(ids, dtype=np.int64)
             self.index.add_with_ids(np_vectors, np_ids)
+            
+        if failed_decryption > 0:
+            if failed_decryption > 2 or (total_attempted > 0 and (failed_decryption / total_attempted) > 0.1):
+                logger.critical(f"CRITICAL: {failed_decryption} out of {total_attempted} face encodings failed to decrypt! Check ENCRYPTION_KEY.")
+            else:
+                logger.warning(f"{failed_decryption} face encodings failed to decrypt out of {total_attempted}.")
             
         self.is_ready = True
         logger.info(f"FAISS initialized with {self.index.ntotal} face vectors.")

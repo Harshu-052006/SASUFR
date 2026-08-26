@@ -107,12 +107,24 @@ async def register(
         await verify_liveness(payload.face_image, payload.liveness_challenge)
 
     face_encoding = await extract_encoding(payload.face_image)
-    existing_faces = []
-    cursor = db.users.find({"face_encoding": {"$exists": True, "$ne": []}, "is_active": True})
-    async for user in cursor:
-        existing_faces.append(user)
-
-    duplicate = await find_best_match(face_encoding, existing_faces)
+    
+    from ..config import settings
+    from ..services.vector_store import vector_store
+    
+    duplicate = None
+    if vector_store.is_ready:
+        results = vector_store.search(face_encoding, k=1, threshold=settings.face_tolerance)
+        if results:
+            target_user = await db.users.find_one({"id": results[0]["user_id"]})
+            if target_user:
+                duplicate = {"user": target_user, "distance": results[0]["distance"]}
+    else:
+        # Fallback to linear search if FAISS is not ready
+        existing_faces = []
+        cursor = db.users.find({"face_encoding": {"$exists": True, "$ne": []}, "is_active": True})
+        async for user in cursor:
+            existing_faces.append(user)
+        duplicate = await find_best_match(face_encoding, existing_faces)
     if duplicate:
         target = duplicate["user"]
         target_snapshot = _security_account_snapshot(target, is_active=False, blocked_reason="BIOMETRIC_DUPLICATION_ATTEMPT")

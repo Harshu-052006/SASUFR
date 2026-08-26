@@ -128,10 +128,14 @@ async def find_best_match(candidate: list[float], users: list[dict]) -> dict | N
         return None
 
     # Fallback to linear search
+    from .crypto import decrypt_encoding
     best_user = None
     best_distance = 1.0
     for user in users:
-        known = user.get("face_encoding") or []
+        try:
+            known = decrypt_encoding(user.get("face_encoding")) or []
+        except Exception:
+            continue
         if not known:
             continue
         try:
@@ -165,12 +169,17 @@ async def find_matches(candidates: list[list[float]], users: list[dict]) -> list
         return matches
 
     # Fallback to linear search
+    from .crypto import decrypt_encoding
     matches = []
     # Optimization: Convert all known face encodings to numpy arrays once
     known_users = []
     for u in users:
-        if u.get("face_encoding"):
-            known_users.append((u, _as_vector(u["face_encoding"])))
+        try:
+            encoding = decrypt_encoding(u.get("face_encoding"))
+            if encoding:
+                known_users.append((u, _as_vector(encoding)))
+        except Exception:
+            continue
 
     if not known_users:
         return []

@@ -16,6 +16,7 @@ class Settings:
     secret_key: str = os.getenv("SECRET_KEY", "change-me-in-production")
     algorithm: str = os.getenv("ALGORITHM", "HS256")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))  
+    encryption_key: str | None = os.getenv("ENCRYPTION_KEY")
 
     mongodb_uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     mongodb_db: str = os.getenv("MONGODB_DB", "smart_attendance")

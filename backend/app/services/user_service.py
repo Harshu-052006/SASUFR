@@ -43,6 +43,7 @@ async def require_admin_password(admin_user: dict, password: str) -> None:
 
 
 async def create_registered_user(db: AsyncIOMotorDatabase, payload: UserCreate, face_encoding: list[float], otp: str, is_active: bool, approval_status: str) -> dict:
+    from .crypto import encrypt_encoding
     user_seq = await db.counters.find_one_and_update(
         {"_id": "users"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
     )
@@ -61,7 +62,7 @@ async def create_registered_user(db: AsyncIOMotorDatabase, payload: UserCreate, 
         "department": payload.department.strip() if payload.department else None,
         "otp_hash": otp_hash(otp, otp_salt()),
         "otp_expires_at": (now_ist() + timedelta(minutes=10)).isoformat(),
-        "face_encoding": face_encoding,
+        "face_encoding": encrypt_encoding(face_encoding) if face_encoding else face_encoding,
         "face_image": payload.face_image,
         "id_card_image": payload.id_card_image,
         "approval_status": approval_status,
