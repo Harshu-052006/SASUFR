@@ -2,29 +2,28 @@ import { useState, useEffect } from "react";
 import { Megaphone, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";
+import { apiFetch } from "../lib/api";
 
 interface Announcement {
-  id: string;
+  id: string | number;
   department: string;
   message: string;
-  timestamp: string;
-  expires_at?: string;
+  created_at: string;
+  created_by?: string | number;
+  expires_at: string;
 }
 
-// TODO: Swap the implementation of this function to hit the real endpoint later
 export async function fetchActiveAnnouncement(): Promise<Announcement | null> {
-  // Mocked response for now since bm1-3.1a-hod-announcements-api isn't available
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: "ann-101",
-        department: "CSE",
-        message: "Important updates regarding the upcoming semester schedule have been posted.",
-        timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        expires_at: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-      });
-    }, 500); // simulate network delay
-  });
+  try {
+    const data = await apiFetch("/announcements/active");
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0]; // Assuming we only show the single most recent active announcement in the banner
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to fetch announcements:", err);
+    return null;
+  }
 }
 
 export function AnnouncementBanner() {
@@ -49,7 +48,7 @@ export function AnnouncementBanner() {
   if (loading || !announcement || dismissed) return null;
 
   // Formatting date
-  const timeStr = new Date(announcement.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeStr = new Date(announcement.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="mb-6 animate-in slide-in-from-top-2 fade-in duration-300">
