@@ -13,6 +13,7 @@ import {
 } from "../../components/ui/dialog";
 import { apiFetch } from "../../lib/api";
 import { Loader2, Plus, Upload, Search, Trash2, Calendar, Clock, BookOpen } from "lucide-react";
+import { toast } from "sonner";
 
 export function Timetables() {
   const [timetables, setTimetables] = useState<any[]>([]);
@@ -54,7 +55,7 @@ export function Timetables() {
       setForm({ subject: "", room_id: "", teacher_name: "", start_time: "", end_time: "", date: "" });
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to create timetable");
+      toast.error(err.message || "Failed to create timetable")
     } finally {
       setSaving(false);
     }
@@ -66,7 +67,7 @@ export function Timetables() {
       await apiFetch(`/admin/timetables/${id}`, { method: "DELETE" });
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to delete");
+      toast.error(err.message || "Failed to delete")
     }
   };
 
@@ -85,11 +86,11 @@ export function Timetables() {
         // credentials: "include" - depending on setup
       });
       if (!resp.ok) throw new Error("Failed to upload file");
-      alert("Timetables imported successfully");
+      toast.success("Timetables imported successfully")
       setIsUploadModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Upload failed");
+      toast.error(err.message || "Upload failed")
     } finally {
       setSaving(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

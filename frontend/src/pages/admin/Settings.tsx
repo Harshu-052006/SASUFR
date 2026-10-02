@@ -5,6 +5,7 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Save } from "lucide-react";
 import { apiFetch } from "../../lib/api";
+import { toast } from "sonner";
 
 export function Settings() {
   const [config, setConfig] = useState<any>({
@@ -37,7 +38,7 @@ export function Settings() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminPassword) {
-      alert("Admin password is required to save changes.");
+      toast.error("Admin password is required to save changes.")
       return;
     }
     
@@ -49,10 +50,10 @@ export function Settings() {
           admin_password: adminPassword
         })
       });
-      alert("Settings saved successfully.");
+      toast.success("Settings saved successfully.")
       setAdminPassword(""); // Clear password field after save
     } catch (err: any) {
-      alert(err.message || "Failed to save settings.");
+      toast.error(err.message || "Failed to save settings.")
     }
   };
 

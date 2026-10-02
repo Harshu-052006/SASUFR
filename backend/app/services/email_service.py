@@ -202,3 +202,17 @@ async def send_lecture_commenced_notice(email: str, student_name: str, subject: 
     return await send_email(email, f"Smart Attendance System - {subject} Started", f"Lecture for {subject} has commenced.", html)
 
 
+async def send_account_approved_notice(email: str) -> bool:
+    title = "Account Approved"
+    content = "Your faculty account for the Smart Attendance System Using Face Recognition platform has been successfully approved by an administrator. You may now log in to the system and access your dashboard."
+    html = _get_premium_template(title, content, "LOGIN NOW", _frontend_url('login.html'))
+    return await send_email(email, f"Smart Attendance System Using Face Recognition - {title}", content, html)
+
+
+async def send_account_rejected_notice(email: str) -> bool:
+    title = "Account Status Update"
+    content = "Thank you for registering with the Smart Attendance System Using Face Recognition platform. Unfortunately, your faculty account request has not been approved at this time. If you believe this is an error or require further clarification, please contact your system administrator."
+    html = _get_premium_template(title, content)
+    return await send_email(email, f"Smart Attendance System Using Face Recognition - {title}", content, html)
+
+

@@ -249,17 +249,30 @@ async def verify_otp(
         raise HTTPException(status_code=400, detail="The verification code entered is incorrect.")
 
     await mark_verified(db, user)
-    background_tasks.add_task(send_registration_success, user["email"])
-    await log_security_event(
-        db,
-        event_type="EMAIL_VERIFIED",
-        severity="info",
-        details=f"Email verified for {user['email']}",
-        user_id=user["id"],
-        ip_address=(request.client.host if request and request.client else None),
-        user_agent=(request.headers.get("user-agent") if request else None),
-    )
-    return {"message": "Verification successful"}
+    
+    if user.get("role") == ROLE_TEACHER:
+        await log_security_event(
+            db,
+            event_type="EMAIL_VERIFIED",
+            severity="info",
+            details=f"Email verified for {user['email']} (pending admin approval)",
+            user_id=user["id"],
+            ip_address=(request.client.host if request and request.client else None),
+            user_agent=(request.headers.get("user-agent") if request else None),
+        )
+        return {"message": "Email verification successful. Your faculty account is currently pending administrator approval. You will not be able to log in until an admin reviews and approves your account."}
+    else:
+        background_tasks.add_task(send_registration_success, user["email"])
+        await log_security_event(
+            db,
+            event_type="EMAIL_VERIFIED",
+            severity="info",
+            details=f"Email verified for {user['email']}",
+            user_id=user["id"],
+            ip_address=(request.client.host if request and request.client else None),
+            user_agent=(request.headers.get("user-agent") if request else None),
+        )
+        return {"message": "Verification successful"}
 
 
 @router.post("/resend-otp")

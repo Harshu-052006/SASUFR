@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
@@ -34,7 +35,18 @@ import { NotFound } from "./pages/NotFound";
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <Toaster 
+        theme="dark" 
+        position="bottom-right"
+        toastOptions={{
+          className: "bg-[#161F30] border-[#2A3854] text-[#F8FAFC] font-sans shadow-[0_8px_30px_rgb(0,0,0,0.4)]",
+          classNames: {
+            success: "text-[#10B981] border-[#10B981]/20 bg-[#10B981]/10",
+            error: "text-[#EF4444] border-[#EF4444]/20 bg-[#EF4444]/10",
+          }
+        }} 
+      />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />

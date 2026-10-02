@@ -13,6 +13,7 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { AnnouncementBanner } from "../../components/AnnouncementBanner";
+import { toast } from "sonner";
 
 export function Dashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -59,7 +60,7 @@ export function Dashboard() {
       setSessionForm({ subject: "", room_id: "" });
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to start session");
+      toast.error(err.message || "Failed to start session")
     } finally {
       setSessionLoading(false);
     }

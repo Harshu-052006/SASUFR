@@ -3,7 +3,7 @@ import io
 from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, BackgroundTasks
 from google import genai
 from google.genai import types
 import json
@@ -16,7 +16,7 @@ from ..dependencies import get_current_user
 from ..models import ROLE_ADMIN
 from ..schemas import AdminAccountCreate, AdminDeleteRequest, AdminResetPasswordRequest, AdminSetActiveRequest, AdminStats, AdminUserUpdateRequest, TeacherCreate, UserOut, WeeklyReport, PunctualityReport, UserStatusReport, AdminConfig, AdminConfigUpdate, FacultyAttendanceReport, MonitoringLocation, MonthlyAttendanceSummary, AdminBulkUpdateClassYearRequest
 from ..services.attendance_service import get_admin_stats, serialize_attendance, get_recent_attendance_logs, get_attendance_report_rows, get_monthly_attendance_summary_rows
-from ..services.email_service import send_password_changed
+from ..services.email_service import send_password_changed, send_account_approved_notice, send_account_rejected_notice
 from ..services.security_service import log_security_event, get_security_logs
 from ..services.user_service import create_teacher_user, delete_user, get_user_by_id, require_admin_password, reset_password, serialize_user, set_active_status, admin_update_user
 from ..services.user_service import create_admin_user, get_user_by_email
@@ -453,7 +453,7 @@ async def admin_pending_approvals(current_user: dict = Depends(_require_admin), 
     return users
 
 @router.post("/admin/approve")
-async def admin_approve_user(payload: ApprovalRequest, current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
+async def admin_approve_user(payload: ApprovalRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
     await require_admin_password(current_user, payload.admin_password)
     target = await get_user_by_id(db, payload.user_id)
     if not target:
@@ -462,10 +462,11 @@ async def admin_approve_user(payload: ApprovalRequest, current_user: dict = Depe
         {"id": payload.user_id},
         {"$set": {"approval_status": "approved", "is_active": True, "updated_at": iso_ist()}}
     )
+    background_tasks.add_task(send_account_approved_notice, target["email"])
     return {"message": "User approved successfully"}
 
 @router.post("/admin/reject")
-async def admin_reject_user(payload: ApprovalRequest, current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
+async def admin_reject_user(payload: ApprovalRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
     await require_admin_password(current_user, payload.admin_password)
     target = await get_user_by_id(db, payload.user_id)
     if not target:
@@ -474,6 +475,7 @@ async def admin_reject_user(payload: ApprovalRequest, current_user: dict = Depen
         {"id": payload.user_id},
         {"$set": {"approval_status": "rejected", "is_active": False, "updated_at": iso_ist()}}
     )
+    background_tasks.add_task(send_account_rejected_notice, target["email"])
     return {"message": "User rejected"}
 
 @router.post("/admin/import_students")

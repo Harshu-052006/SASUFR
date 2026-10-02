@@ -6,6 +6,7 @@ import { Input } from "../../components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { apiFetch } from "../../lib/api";
 import { Loader2, Search, Check, X, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
 
 export function MarkAttendance() {
   const [students, setStudents] = useState<any[]>([]);
@@ -56,7 +57,7 @@ export function MarkAttendance() {
       });
       fetchLiveFeed();
     } catch (err: any) {
-      alert(err.message || "Failed to mark attendance manually");
+      toast.error(err.message || "Failed to mark attendance manually")
     }
   };
 

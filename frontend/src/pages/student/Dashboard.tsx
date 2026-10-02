@@ -10,7 +10,11 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { apiFetch } from "../../lib/api";
-import { Loader2, Camera, MapPin, Radio, AlertCircle } from "lucide-react";
+import { 
+  Camera, MapPin, MapPinOff, AlertTriangle, 
+  CheckCircle2, Clock, Calendar as CalendarIcon, FileText, Loader2, Radio, AlertCircle
+} from "lucide-react";
+import { toast } from "sonner";
 import { AnnouncementBanner } from "../../components/AnnouncementBanner";
 
 export function Dashboard() {
@@ -129,7 +133,7 @@ export function Dashboard() {
     const imageBase64 = canvas.toDataURL("image/jpeg");
 
     try {
-      await apiFetch("/student/attendance/self-mark", {
+      const response = await apiFetch("/student/attendance/self-mark", {
         method: "POST",
         body: JSON.stringify({
           session_id: selectedSession.id,
@@ -138,11 +142,18 @@ export function Dashboard() {
           longitude: location.lon
         })
       });
-      alert("Attendance Marked Successfully!");
+      
+      const timeStr = response.check_in 
+        ? new Date(response.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+      const subject = response.subject || selectedSession.subject || 'Class';
+      
+      toast.success(`Attendance marked for ${subject} at ${timeStr}`);
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to mark attendance.");
+      toast.error(err.message || "Failed to mark attendance.");
       setCamStatus("ready");
     }
   };

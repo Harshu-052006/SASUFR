@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Loader2, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 export function Reports() {
   const [startDate, setStartDate] = useState("");
@@ -14,7 +15,7 @@ export function Reports() {
   const handleExport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startDate || !endDate) {
-      alert("Please select both start and end dates.");
+      toast.error("Please select both start and end dates.")
       return;
     }
     
@@ -44,7 +45,7 @@ export function Reports() {
       a.remove();
       
     } catch (err: any) {
-      alert(err.message || "Export failed.");
+      toast.error(err.message || "Export failed.")
     } finally {
       setLoading(false);
     }

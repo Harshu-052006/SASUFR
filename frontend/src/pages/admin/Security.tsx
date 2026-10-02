@@ -6,6 +6,7 @@ import { Input } from "../../components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { apiFetch } from "../../lib/api";
 import { Loader2, Key } from "lucide-react";
+import { toast } from "sonner";
 
 export function Security() {
   const [config, setConfig] = useState({
@@ -51,7 +52,7 @@ export function Security() {
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminPassword) {
-      alert("Admin password required to confirm changes.");
+      toast.error("Admin password required to confirm changes.")
       return;
     }
     setSaving(true);
@@ -64,10 +65,10 @@ export function Security() {
         })
       });
       setAdminPassword("");
-      alert("Security policies updated successfully.");
+      toast.success("Security policies updated successfully.")
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to update security policies.");
+      toast.error(err.message || "Failed to update security policies.")
     } finally {
       setSaving(false);
     }

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { apiFetch } from "../../lib/api";
+import { toast } from "sonner";
 import { Shield, KeyRound, Loader2 } from "lucide-react";
 
 export function Settings() {
@@ -36,12 +37,12 @@ export function Settings() {
         method: "POST",
         body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
       });
-      setMessage("Password updated successfully.");
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      toast.success("Password updated successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to change password.");
+      toast.error(err.message || "Failed to change password.");
     } finally {
       setLoading(false);
     }

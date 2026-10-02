@@ -13,10 +13,11 @@ from app.utils.time import iso_ist
 
 TEACHERS = [
     {
-        "full_name": "Faizan Shaikh",
-        "email": "Connect@nexonatech.com",
+        "full_name": "Sakshi Joshi",
+        "email": "sakshi.joshi@mit.asia",
         "employee_id": "SPX-COO-002",
-        "department": "COO",
+        "department": "Computer Application",
+        "role": "HOD",
         "password": "FS@2024",
     }
 ]

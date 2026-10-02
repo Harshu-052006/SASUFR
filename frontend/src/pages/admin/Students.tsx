@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../components/ui/dialog";
+import { toast } from "sonner";
 
 export function Students() {
   const [users, setUsers] = useState<any[]>([]);
@@ -67,7 +68,7 @@ export function Students() {
       fetchPendingApprovals();
       fetchUsers();
     } catch (err: any) {
-      alert(err.message || "Failed to approve");
+      toast.error(err.message || "Failed to approve")
     }
   };
 
@@ -79,10 +80,10 @@ export function Students() {
         method: "POST",
         body: formData // Let api utility handle Content-Type removal for FormData
       });
-      alert("Import successful");
+      toast.success("Import successful")
       fetchUsers();
     } catch (err: any) {
-      alert(err.message || "Import failed");
+      toast.error(err.message || "Import failed")
     }
   };
 

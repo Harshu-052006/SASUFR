@@ -390,7 +390,7 @@
                         if (session.lecture_start_time && session.lecture_end_time) {
                             classText += ` (${session.lecture_start_time} - ${session.lecture_end_time})`;
                         }
-                        document.getElementById('activeSessionClass').textContent = classText;
+                        document.getElementById('activeSessionClass').textContent = classText + (session.room_code ? ` | Room Code: ${session.room_code}` : '');
                         
                         const startTime = new Date(session.start_time);
                         const endTime = new Date(startTime.getTime() + 30 * 60000);
@@ -458,7 +458,7 @@
                         throw new Error(data.detail || 'Failed to start session');
                     }
                     
-                    alert("Session started successfully. Students have 30 minutes to mark attendance.");
+                    alert(`Session started successfully.\n\nROOM CODE: ${data.room_code || 'N/A'}\n\nStudents have 30 minutes to mark attendance.`);
                     modal.style.display = 'none';
                     fetchActiveSessions();
                 } catch (e) {

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { apiFetch } from "../lib/api";
 import { ShieldCheck, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function Otp() {
   const navigate = useNavigate();
@@ -12,7 +12,6 @@ export function Otp() {
   
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(60);
 
   useEffect(() => {
@@ -31,7 +30,6 @@ export function Otp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
@@ -39,10 +37,10 @@ export function Otp() {
         method: "POST",
         body: JSON.stringify({ email, otp }),
       });
-      // Verification successful, redirect to login
+      toast.success("Account verified successfully!");
       navigate("/login?verified=true");
     } catch (err: any) {
-      setError(err.message || "Invalid or expired OTP");
+      toast.error(err.message || "Invalid or expired OTP");
     } finally {
       setLoading(false);
     }
@@ -56,9 +54,9 @@ export function Otp() {
         body: JSON.stringify({ email }),
       });
       setResendTimer(60);
-      setError("");
+      toast.success("OTP resent successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to resend OTP");
+      toast.error(err.message || "Failed to resend OTP");
     }
   };
 
@@ -77,11 +75,6 @@ export function Otp() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-3 text-sm text-center text-rose-600 bg-rose-50 border border-rose-100 rounded-lg">
-              {error}
-            </div>
-          )}
 
           <div>
             <Input 

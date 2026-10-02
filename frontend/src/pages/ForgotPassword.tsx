@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { apiFetch } from "../lib/api";
 import { KeyRound, Loader2, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export function ForgotPassword() {
   const navigate = useNavigate();
@@ -21,10 +22,10 @@ export function ForgotPassword() {
         method: "POST",
         body: JSON.stringify({ email }),
       });
-      // Redirect to reset password with email in query
+      toast.success("Password reset code sent to your email.");
       navigate(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
-      setError(err.message || "Failed to request password reset");
+      toast.error(err.message || "Failed to request password reset");
     } finally {
       setLoading(false);
     }
@@ -48,12 +49,7 @@ export function ForgotPassword() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="p-3 text-sm text-center text-rose-600 bg-rose-50 border border-rose-100 rounded-lg">
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-6">
 
           <div>
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">Email</label>

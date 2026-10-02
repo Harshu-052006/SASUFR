@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { apiFetch } from "../lib/api";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 
@@ -13,11 +14,9 @@ export function Login() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
     
     try {
@@ -34,7 +33,7 @@ export function Login() {
       else navigate("/student");
       
     } catch (err: any) {
-      setError(err.message || "Invalid credentials. Please try again.");
+      toast.error(err.message || "Invalid credentials. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -68,11 +67,11 @@ export function Login() {
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="password">
               Password
             </label>
-            <a href="#" className="text-sm text-primary hover:underline">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
               Forgot password?
-            </a>
+            </Link>
           </div>
-          <Input 
+                    <Input 
             id="password" 
             type="password" 
             value={password}
@@ -80,23 +79,21 @@ export function Login() {
             required 
           />
         </div>
-        {error && (
-          <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md text-left">
-            {error}
-          </div>
-        )}
-        
-        <Button className="w-full mt-6" type="submit" disabled={loading}>
+        <Button 
+          className="w-full mt-8 bg-gradient-to-br from-[#06B6D4] to-[#6366F1] text-white font-extrabold uppercase tracking-wider shadow-[0_8px_24px_rgba(99,102,241,0.3)] hover:scale-[1.02] hover:shadow-[0_12px_32px_rgba(99,102,241,0.4)] transition-all border-none" 
+          type="submit" 
+          disabled={loading}
+        >
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
           Sign In
         </Button>
       </form>
       
-      <p className="px-8 text-center text-sm text-muted-foreground mt-8">
+      <p className="px-8 text-center text-sm text-[#94A3B8] mt-8">
         Don't have an account?{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-primary">
-          Contact administrator
-        </a>
+        <Link to="/register" className="text-[#06B6D4] hover:text-[#00D1C7] font-bold underline underline-offset-4">
+          Create account
+        </Link>
       </p>
     </AuthLayout>
   );

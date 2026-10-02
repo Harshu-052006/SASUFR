@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { apiFetch } from "../lib/api";
 import { 
-  GraduationCap, Loader2, ArrowRight, Camera, ArrowLeft, 
+  Loader2, ArrowRight, Camera, ArrowLeft, 
   CheckCircle, AlertCircle, Shield, RefreshCw
 } from "lucide-react";
+import { toast } from "sonner";
 
 type Role = "student" | "teacher";
 
@@ -264,7 +267,7 @@ export function Register() {
       });
       navigate("/login");
     } catch (err: any) {
-      setError(err.detail || "Invalid verification code.");
+      toast.error(err.detail || "Invalid verification code.");
     } finally {
       setLoading(false);
     }
@@ -284,7 +287,7 @@ export function Register() {
       }
       setTimeLeft(120);
     } catch (err: any) {
-      setError(err.detail || "Failed to resend code.");
+      toast.error(err.detail || "Failed to resend code.");
     } finally {
       setLoading(false);
     }
@@ -297,374 +300,324 @@ export function Register() {
     return "";
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-[900px] flex flex-col md:flex-row bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-        
-        {/* Left Sidebar */}
-        <div className="md:w-1/3 bg-indigo-600 p-8 text-white flex flex-col justify-between">
-          <div>
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
-              <GraduationCap className="w-8 h-8 text-white" />
-            </div>
-            
-            {step === 1 && (
-              <>
-                <h2 className="text-2xl font-bold tracking-tight mb-2">Create Account</h2>
-                <p className="text-indigo-100 text-sm mb-8 leading-relaxed">
-                  Join the platform to enable secure, instant attendance tracking powered by AI.
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> Seamless Registration</div>
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> Organization Sync</div>
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> Secure Storage</div>
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <h2 className="text-2xl font-bold tracking-tight mb-2">Biometric Setup</h2>
-                <p className="text-indigo-100 text-sm mb-8 leading-relaxed">
-                  Position your face clearly in the frame. We use advanced face recognition for instant verification.
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> Ensure good lighting</div>
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> Look straight ahead</div>
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> Follow liveness prompt</div>
-                </div>
-              </>
-            )}
-
-            {step === 3 && (
-              <>
-                <h2 className="text-2xl font-bold tracking-tight mb-2">Secure Verification</h2>
-                <p className="text-indigo-100 text-sm mb-8 leading-relaxed">
-                  Two-factor authentication adds an extra layer of security to your account.
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> End-to-end encrypted</div>
-                  <div className="flex items-center text-sm font-medium"><CheckCircle className="w-5 h-5 mr-3 text-indigo-200" /> Time-limited codes</div>
-                </div>
-              </>
-            )}
-          </div>
-          
-          <div className="mt-12 pt-8 border-t border-indigo-500/50">
-            <div className="flex space-x-2">
-              <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-white' : 'bg-indigo-400'}`} />
-              <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-white' : 'bg-indigo-400'}`} />
-              <div className={`h-1.5 flex-1 rounded-full ${step >= 3 ? 'bg-white' : 'bg-indigo-400'}`} />
-            </div>
-            <p className="text-xs font-medium text-indigo-200 mt-3 uppercase tracking-wider">Step {step} of 3</p>
+  const leftContent = (
+    <div className="relative z-10">
+      {step === 1 && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-20">
+          <h2 className="text-[2.8rem] leading-[1.1] font-extrabold text-foreground tracking-[-0.04em] mb-4">Create<br/>Account</h2>
+          <p className="text-muted-foreground text-[1.1rem] leading-[1.7] mb-8">Join the platform to enable secure, instant attendance tracking powered by AI.</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> Seamless Registration</div>
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> Organization Sync</div>
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> Secure Storage</div>
           </div>
         </div>
+      )}
+      {step === 2 && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-20">
+          <h2 className="text-[2.8rem] leading-[1.1] font-extrabold text-foreground tracking-[-0.04em] mb-4">Biometric<br/>Setup</h2>
+          <p className="text-muted-foreground text-[1.1rem] leading-[1.7] mb-8">Position your face clearly in the frame. We use advanced face recognition for instant verification.</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> Ensure good lighting</div>
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> Look straight ahead</div>
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> Follow liveness prompt</div>
+          </div>
+        </div>
+      )}
+      {step === 3 && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-20">
+          <h2 className="text-[2.8rem] leading-[1.1] font-extrabold text-foreground tracking-[-0.04em] mb-4">Secure<br/>Verification</h2>
+          <p className="text-muted-foreground text-[1.1rem] leading-[1.7] mb-8">Two-factor authentication adds an extra layer of security to your account.</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> End-to-end encrypted</div>
+            <div className="flex items-center gap-3 text-sm font-bold"><CheckCircle className="w-5 h-5 text-[#06B6D4]" /> Time-limited codes</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
-        {/* Right Content */}
-        <div className="md:w-2/3 p-8">
-          {error && (
-            <div className="mb-6 p-4 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-              {needsVerification && (
-                <Button 
-                  type="button"
-                  size="sm"
-                  className="bg-rose-600 hover:bg-rose-700 text-white shrink-0" 
-                  onClick={() => {
-                    setStep(3);
-                    apiFetch("/resend-otp", { method: "POST", body: JSON.stringify({ email: formData.email }) }).catch(() => {});
-                    setTimeLeft(120);
-                  }}
-                >
-                  Verify Now
-                </Button>
-              )}
+  return (
+    <AuthLayout leftContent={leftContent} maxWidthClass="max-w-md">
+      <div className="flex flex-col justify-center">
+        {/* Stepper */}
+        <div className="flex items-center gap-3 mb-8 mx-auto sm:mx-0">
+          <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm font-extrabold ${step >= 1 ? (step > 1 ? 'bg-[#06B6D4]/10 border-[#06B6D4] text-[#06B6D4]' : 'bg-[#06B6D4] border-[#06B6D4] text-black shadow-[0_0_12px_rgba(6,182,212,0.4)]') : 'border-border text-muted-foreground'}`}>1</div>
+          <div className={`w-8 h-[1px] ${step >= 2 ? 'bg-[#06B6D4]' : 'bg-border'}`} />
+          <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm font-extrabold ${step >= 2 ? (step > 2 ? 'bg-[#06B6D4]/10 border-[#06B6D4] text-[#06B6D4]' : 'bg-[#06B6D4] border-[#06B6D4] text-black shadow-[0_0_12px_rgba(6,182,212,0.4)]') : 'border-border text-muted-foreground'}`}>2</div>
+          <div className={`w-8 h-[1px] ${step >= 3 ? 'bg-[#06B6D4]' : 'bg-border'}`} />
+          <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm font-extrabold ${step >= 3 ? 'bg-[#06B6D4] border-[#06B6D4] text-black shadow-[0_0_12px_rgba(6,182,212,0.4)]' : 'border-border text-muted-foreground'}`}>3</div>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 text-[0.88rem] text-destructive bg-destructive/10 border border-destructive/20 rounded-md flex items-center justify-between gap-3">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              {error}
             </div>
-          )}
+            {needsVerification && (
+              <Button 
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setStep(3);
+                  apiFetch("/resend-otp", { method: "POST", body: JSON.stringify({ email: formData.email }) }).catch(() => {});
+                  setTimeLeft(120);
+                }}
+              >
+                Verify Now
+              </Button>
+            )}
+          </div>
+        )}
 
-          {/* STEP 1: Account Info */}
-          {step === 1 && (
-            <form className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
-              <h3 className="text-xl font-bold text-slate-800 mb-6">Basic Information</h3>
-              
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Role</label>
-                <select 
-                  name="requested_role" 
-                  value={formData.requested_role} 
-                  onChange={handleChange}
-                  className="flex h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                >
-                  <option value="student">Student</option>
-                  <option value="teacher">Faculty / Staff</option>
-                </select>
+        {step === 1 && (
+          <form className="space-y-4 animate-in fade-in duration-500">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">ROLE</label>
+              <Select value={formData.requested_role} onValueChange={(val) => setFormData(prev => ({ ...prev, requested_role: val as Role }))}>
+                <SelectTrigger className="h-11 bg-background">
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="teacher">Faculty / Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">FULL NAME</label>
+                <Input name="full_name" required placeholder="Enter your full name" value={formData.full_name} onChange={handleChange} className="h-11 bg-background" />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Full Name <span className="text-rose-500">*</span></label>
-                  <Input name="full_name" required placeholder="Enter your full name" value={formData.full_name} onChange={handleChange} className="h-11 bg-slate-50 border-slate-200" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Email Address <span className="text-rose-500">*</span></label>
-                  <Input name="email" type="email" required placeholder="e.g., student@university.edu.in" value={formData.email} onChange={handleChange} className="h-11 bg-slate-50 border-slate-200" />
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">EMAIL ADDRESS</label>
+                <Input name="email" type="email" required placeholder="e.g. student@college.edu" value={formData.email} onChange={handleChange} className="h-11 bg-background" />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Roll / Employee Number <span className="text-rose-500">*</span></label>
-                  <Input name="roll_number" required placeholder={formData.requested_role === 'student' ? 'e.g., CS21001' : 'e.g., EMP1042'} value={formData.roll_number} onChange={handleChange} className="h-11 bg-slate-50 border-slate-200" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Department <span className="text-rose-500">*</span></label>
-                  <select 
-                    name="department" 
-                    required 
-                    value={formData.department} 
-                    onChange={handleChange}
-                    className="flex h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                  >
-                    <option value="" disabled>Select Department</option>
-                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
-                    <option value="Electronics & Communication">Electronics & Communication</option>
-                    <option value="Electrical & Electronics">Electrical & Electronics</option>
-                    <option value="Information Technology">Information Technology</option>
-                    <option value="Mechanical Engineering">Mechanical Engineering</option>
-                    <option value="Civil Engineering">Civil Engineering</option>
-                    <option value="AI & Data Science">AI & Data Science</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">ID NUMBER</label>
+                <Input name="roll_number" required placeholder={formData.requested_role === 'student' ? 'e.g. CS21001' : 'e.g. EMP1042'} value={formData.roll_number} onChange={handleChange} className="h-11 bg-background" />
               </div>
-
-              {formData.requested_role === "student" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Program (Optional)</label>
-                    <Input name="program" placeholder="e.g., B.Tech" value={formData.program} onChange={handleChange} className="h-11 bg-white border-slate-200" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Enrolled Subjects (Optional)</label>
-                    <Input name="enrolled_subjects" placeholder="CS101, CS102" value={formData.enrolled_subjects} onChange={handleChange} className="h-11 bg-white border-slate-200" />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Designation (Optional)</label>
-                    <select name="designation" value={formData.designation} onChange={handleChange} className="flex h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                      <option value="">Select Designation</option>
-                      <option value="Assistant Professor">Assistant Professor</option>
-                      <option value="Associate Professor">Associate Professor</option>
-                      <option value="Professor">Professor</option>
-                      <option value="HOD">Head of Department (HOD)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Upload ID Card <span className="text-rose-500">*</span></label>
-                    <input type="file" ref={idCardRef} onChange={handleIdCardUpload} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 mt-1" />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Password <span className="text-rose-500">*</span></label>
-                  <Input name="password" type="password" required placeholder="Min 6 characters" value={formData.password} onChange={handleChange} className="h-11 bg-slate-50 border-slate-200" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Confirm Password <span className="text-rose-500">*</span></label>
-                  <Input name="confirm_password" type="password" required placeholder="Confirm password" value={formData.confirm_password} onChange={handleChange} className="h-11 bg-slate-50 border-slate-200" />
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <Button type="button" onClick={nextToStep2} className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 text-[15px] font-semibold tracking-wide shadow-md">
-                  Continue to Biometrics
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 2: Biometrics */}
-          {step === 2 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div>
-                <h3 className="text-xl font-bold text-slate-800">Biometric Capture</h3>
-                <p className="text-slate-500 text-sm mt-1">Please position your face within the frame and follow the prompt.</p>
-              </div>
-
-              {isFaceAvailable === false ? (
-                <div className="p-8 text-center bg-rose-50 border-2 border-dashed border-rose-200 rounded-2xl text-rose-700">
-                  <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="font-semibold text-lg">Face Recognition Unavailable</p>
-                  <p className="text-sm mt-2 opacity-80 max-w-sm mx-auto">{faceErrorMsg}</p>
-                </div>
-              ) : (
-                <div className="relative overflow-hidden bg-slate-100 rounded-2xl border-2 border-slate-200 aspect-video flex flex-col items-center justify-center">
-                  
-                  {!streamActive && !capturedImage && (
-                    <div className="text-center p-6 text-slate-400">
-                      <Camera className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="font-medium text-slate-500">Camera is off</p>
-                      <p className="text-sm mt-1">Click below to start video feed</p>
-                    </div>
-                  )}
-
-                  <video 
-                    ref={videoRef} 
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${streamActive && !capturedImage ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
-                    style={{ transform: 'scaleX(-1)' }}
-                    autoPlay 
-                    playsInline 
-                    muted 
-                  />
-                  
-                  {capturedImage && (
-                    <img 
-                      src={capturedImage} 
-                      alt="Captured face" 
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{ transform: 'scaleX(-1)' }}
-                    />
-                  )}
-
-                  <canvas ref={canvasRef} className="hidden" />
-
-                  {/* Liveness Overlay */}
-                  {streamActive && !capturedImage && challenge && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md text-white px-6 py-3 rounded-full border border-indigo-500 shadow-2xl animate-in fade-in slide-in-from-top-4">
-                      <div className="flex items-center font-bold tracking-wide">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-3" />
-                        {getChallengeText(challenge)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => setStep(1)} 
-                  className="h-12 flex-1 border-slate-200"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                </Button>
-                
-                {isFaceAvailable !== false && (
-                  <>
-                    <Button 
-                      type="button" 
-                      onClick={startCamera} 
-                      variant={streamActive ? "destructive" : "secondary"}
-                      className="h-12 flex-1"
-                    >
-                      {streamActive ? "Stop Camera" : (capturedImage ? "Retake Photo" : "Start Camera")}
-                    </Button>
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">DEPARTMENT</label>
+                <Select required value={formData.department} onValueChange={(val) => setFormData(prev => ({ ...prev, department: val }))}>
+                  <SelectTrigger className="h-11 bg-background">
+                    <SelectValue placeholder="Select Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Computer Science & Engineering">Computer Science & Engineering</SelectItem>
+                    <SelectItem value="Electronics & Communication">Electronics & Communication</SelectItem>
+                    <SelectItem value="Electrical & Electronics">Electrical & Electronics</SelectItem>
+                    <SelectItem value="Information Technology">Information Technology</SelectItem>
+                    <SelectItem value="Mechanical Engineering">Mechanical Engineering</SelectItem>
+                    <SelectItem value="Civil Engineering">Civil Engineering</SelectItem>
+                    <SelectItem value="AI & Data Science">AI & Data Science</SelectItem>
+                    <SelectItem value="Computer Applications">Computer Applications</SelectItem>
                     
-                    <Button 
-                      type="button" 
-                      onClick={capturePhoto} 
-                      disabled={!streamActive}
-                      className="h-12 flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-50"
-                    >
-                      <Camera className="w-4 h-4 mr-2" /> Capture Frame
-                    </Button>
-                  </>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {formData.requested_role === "student" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-xl border border-border">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">PROGRAM (OPTIONAL)</label>
+                  <Input name="program" placeholder="e.g. B.Tech" value={formData.program} onChange={handleChange} className="h-11 bg-background" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">SUBJECTS (OPTIONAL)</label>
+                  <Input name="enrolled_subjects" placeholder="CS101, CS102" value={formData.enrolled_subjects} onChange={handleChange} className="h-11 bg-background" />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-xl border border-border">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">DESIGNATION (OPTIONAL)</label>
+                  <Select value={formData.designation} onValueChange={(val) => setFormData(prev => ({ ...prev, designation: val }))}>
+                    <SelectTrigger className="h-11 bg-background">
+                      <SelectValue placeholder="Select Designation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
+                      <SelectItem value="Associate Professor">Associate Professor</SelectItem>
+                      <SelectItem value="Professor">Professor</SelectItem>
+                      <SelectItem value="HOD">Head of Department (HOD)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">UPLOAD ID CARD</label>
+                  <input type="file" ref={idCardRef} onChange={handleIdCardUpload} accept="image/*" className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-muted file:text-foreground hover:file:bg-muted/80 mt-1 cursor-pointer" />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">PASSWORD</label>
+                <Input name="password" type="password" required placeholder="Min 6 characters" value={formData.password} onChange={handleChange} className="h-11 bg-background" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">CONFIRM PASSWORD</label>
+                <Input name="confirm_password" type="password" required placeholder="Confirm password" value={formData.confirm_password} onChange={handleChange} className="h-11 bg-background" />
+              </div>
+            </div>
+
+            <div className="pt-6">
+              <Button 
+                type="button" 
+                onClick={nextToStep2} 
+                className="w-full h-12 bg-gradient-to-br from-[#06B6D4] to-[#6366F1] text-white font-extrabold uppercase tracking-wider shadow-[0_8px_24px_rgba(99,102,241,0.3)] hover:scale-[1.02] hover:shadow-[0_12px_32px_rgba(99,102,241,0.4)] transition-all border-none"
+              >
+                Continue to Biometrics <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* STEP 2: Biometrics */}
+        {step === 2 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col items-center">
+            
+            {isFaceAvailable === false ? (
+              <div className="w-full p-8 text-center bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
+                <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="font-bold text-lg">Face Recognition Unavailable</p>
+                <p className="text-sm mt-2 opacity-80 max-w-sm mx-auto">{faceErrorMsg}</p>
+              </div>
+            ) : (
+              <div className="w-full max-w-[500px] aspect-video bg-muted/50 rounded-md border border-border relative overflow-hidden flex items-center justify-center">
+                {!streamActive && !capturedImage && (
+                  <div className="text-center text-muted-foreground">
+                    <Camera className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p className="font-bold uppercase tracking-[1px] text-[0.8rem]">Camera Offline</p>
+                  </div>
+                )}
+
+                <video 
+                  ref={videoRef} 
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${streamActive && !capturedImage ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+                  style={{ transform: 'scaleX(-1)' }}
+                  autoPlay playsInline muted 
+                />
+                
+                {capturedImage && (
+                  <img src={capturedImage} alt="Captured" className="absolute inset-0 w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
+                )}
+                
+                <canvas ref={canvasRef} className="hidden" />
+
+                {streamActive && !capturedImage && (
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-[#06B6D4] shadow-[0_0_15px_#06B6D4] opacity-60 animate-[scan_3s_linear_infinite]" />
+                )}
+
+                {streamActive && !capturedImage && challenge && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-md text-foreground px-5 py-2 rounded-full border border-[#06B6D4]/50 shadow-2xl flex items-center font-bold tracking-wide text-sm">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse mr-3" />
+                    {getChallengeText(challenge)}
+                  </div>
                 )}
               </div>
+            )}
 
-              <div className="pt-4 border-t border-slate-100">
-                <Button 
-                  type="button" 
-                  onClick={submitRegistration} 
-                  disabled={loading || !capturedImage}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-[15px] font-semibold tracking-wide shadow-md"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Shield className="w-5 h-5 mr-2" />}
-                  {loading ? "Registering..." : "Submit Registration"}
-                </Button>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-4 w-full pt-4">
+              <Button type="button" variant="outline" onClick={() => setStep(1)} className="w-full sm:w-auto font-bold flex items-center justify-center">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+              </Button>
+              
+              {isFaceAvailable !== false && (
+                <>
+                  <Button type="button" variant={streamActive ? "destructive" : "secondary"} onClick={startCamera} className="flex-1 font-bold">
+                    {streamActive ? "Stop Camera" : (capturedImage ? "Retake Photo" : "Start Camera")}
+                  </Button>
+                  
+                  <Button 
+                    type="button" 
+                    onClick={capturePhoto} 
+                    disabled={!streamActive} 
+                    className="flex-1 bg-gradient-to-r from-[#06B6D4] to-[#6366F1] text-white font-black tracking-[1px] shadow-[0_8px_24px_rgba(99,102,241,0.3)] hover:scale-[1.02] transition-all flex items-center justify-center uppercase border-none"
+                  >
+                    <Camera className="w-4 h-4 mr-2" /> Capture
+                  </Button>
+                </>
+              )}
             </div>
-          )}
 
-          {/* STEP 3: OTP */}
-          {step === 3 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+            <Button 
+              type="button" 
+              onClick={submitRegistration} 
+              disabled={loading || !capturedImage} 
+              className="w-full mt-2 bg-gradient-to-r from-[#10B981] to-[#059669] text-white font-black tracking-[1px] shadow-[0_8px_24px_rgba(16,185,129,0.3)] hover:scale-[1.02] hover:shadow-[0_12px_32px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center uppercase border-none"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Shield className="w-5 h-5 mr-2" />}
+              {loading ? "Registering..." : "Submit Registration"}
+            </Button>
+          </div>
+        )}
+
+        {/* STEP 3: OTP */}
+        {step === 3 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 w-full max-w-[400px] mx-auto">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-[#10B981]/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-[#10B981]/20">
+                <Shield className="w-10 h-10 text-[#10B981]" />
+              </div>
+              <h3 className="text-2xl font-black text-foreground mb-2">Verify Your Email</h3>
+              <p className="text-muted-foreground">
+                We've sent a 6-digit verification code to<br/>
+                <strong className="text-foreground">{formData.email}</strong>
+              </p>
+            </div>
+
+            <div className="space-y-5 pt-4">
+              <Input 
+                type="text" 
+                maxLength={6} 
+                placeholder="••••••" 
+                value={otp} 
+                onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                className="w-full h-16 text-center text-3xl font-black tracking-[0.5em] bg-background"
+              />
+              
               <div className="text-center">
-                <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Shield className="w-10 h-10 text-emerald-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-2">Verify Your Email</h3>
-                <p className="text-slate-500">
-                  We've sent a 6-digit verification code to<br/>
-                  <strong className="text-slate-900">{formData.email}</strong>
+                <p className="text-sm font-bold text-muted-foreground flex items-center justify-center">
+                  Code expires in: 
+                  <span className={`ml-2 font-mono text-lg ${timeLeft < 30 ? 'text-destructive' : 'text-[#06B6D4]'}`}>
+                    {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+                  </span>
                 </p>
               </div>
 
-              <div className="max-w-xs mx-auto space-y-5 pt-4">
-                <div className="relative">
-                  <Input 
-                    type="text" 
-                    maxLength={6} 
-                    placeholder="• • • • • •" 
-                    value={otp} 
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="h-16 text-center text-3xl font-bold tracking-[0.5em] bg-slate-50 border-slate-200"
-                  />
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-sm font-medium text-slate-500 flex items-center justify-center">
-                    Code expires in: 
-                    <span className={`ml-2 font-bold ${timeLeft < 30 ? 'text-rose-600' : 'text-indigo-600'}`}>
-                      {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
-                    </span>
-                  </p>
-                </div>
-
-                <Button 
-                  type="button" 
-                  onClick={verifyOtp} 
-                  disabled={loading || otp.length !== 6 || timeLeft === 0}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 text-[15px] font-semibold"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                  Verify Account
-                </Button>
-                
-                <div className="text-center pt-2">
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    onClick={resendOtp}
-                    disabled={loading || timeLeft > 60}
-                    className="text-sm text-slate-500 hover:text-indigo-600"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" /> Resend Code
-                  </Button>
-                </div>
+              <Button 
+                type="button" 
+                onClick={verifyOtp} 
+                disabled={loading || otp.length !== 6 || timeLeft === 0} 
+                className="w-full bg-gradient-to-r from-[#06B6D4] to-[#6366F1] text-white font-black tracking-[1px] shadow-[0_8px_24px_rgba(99,102,241,0.3)] hover:scale-[1.02] hover:shadow-[0_12px_32px_rgba(99,102,241,0.4)] transition-all flex items-center justify-center uppercase border-none"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null} Verify Account
+              </Button>
+              
+              <div className="text-center pt-2">
+                <button type="button" onClick={resendOtp} disabled={loading || timeLeft > 60} className="text-sm font-bold text-muted-foreground hover:text-[#06B6D4] transition-colors flex items-center justify-center mx-auto disabled:opacity-50">
+                  <RefreshCw className="w-4 h-4 mr-2" /> Resend Code
+                </button>
               </div>
             </div>
-          )}
-          
-          {step === 1 && (
-            <p className="text-center text-sm text-slate-500 mt-8 pb-4 border-t border-slate-100 pt-6">
-              Already have an account?{" "}
-              <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                Sign in
-              </Link>
-            </p>
-          )}
+          </div>
+        )}
 
-        </div>
+        {step === 1 && (
+          <div className="mt-8 pt-6 border-t border-border text-center text-[0.9rem] text-muted-foreground">
+            Already have an account?{" "}
+            <Link to="/login" className="font-bold text-[#06B6D4] hover:text-foreground transition-colors">Sign in here</Link>
+          </div>
+        )}
       </div>
-    </div>
+    </AuthLayout>
   );
 }

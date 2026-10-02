@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { apiFetch } from "../lib/api";
 import { ShieldAlert, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function ResetPassword() {
   const navigate = useNavigate();
@@ -43,9 +44,10 @@ export function ResetPassword() {
         method: "POST",
         body: JSON.stringify({ email, otp, new_password: newPassword }),
       });
+      toast.success("Password reset successfully. You can now login.");
       navigate("/login?reset=true");
     } catch (err: any) {
-      setError(err.message || "Failed to reset password");
+      toast.error(err.message || "Failed to reset password");
     } finally {
       setLoading(false);
     }

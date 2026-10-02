@@ -1,4 +1,11 @@
 from __future__ import annotations
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
+
 
 import os
 import sys
@@ -41,7 +48,7 @@ from app.utils.time import iso_ist
 
 
 BASE_DIR = Path(__file__).resolve().parent
-FRONTEND_DIR = BASE_DIR.parent / "frontend"
+FRONTEND_DIR = BASE_DIR.parent / "frontend-legacy"
 
 # ── Startup validation ────────────────────────────────────────────────────────
 _INSECURE_KEYS = {"change-me-in-production", "change-this-secret", "", "your-secret-key"}
@@ -114,8 +121,10 @@ app.add_middleware(
 
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
-    app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
-    app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
+    if (FRONTEND_DIR / "css").exists():
+        app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
+    if (FRONTEND_DIR / "js").exists():
+        app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
 
 
 @app.get("/favicon.ico", include_in_schema=False)

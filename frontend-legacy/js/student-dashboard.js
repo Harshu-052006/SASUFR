@@ -458,11 +458,19 @@
             canvas.getContext('2d').drawImage(studentVideo, 0, 0);
             const imageBase64 = canvas.toDataURL('image/jpeg');
 
+            const roomCode = prompt("Enter the room code provided by the teacher:");
+            if (!roomCode) {
+                captureFaceBtn.disabled = false;
+                captureFaceBtn.textContent = "CAPTURE & VERIFY";
+                return;
+            }
+
             try {
                 const { resp, data } = await window.Api.apiFetch('/student/attendance/self-mark', {
                     method: 'POST',
                     body: {
                         session_id: activeSessionId,
+                        room_code: roomCode,
                         image: imageBase64,
                         latitude: currentLat,
                         longitude: currentLon

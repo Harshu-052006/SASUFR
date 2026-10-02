@@ -23,13 +23,17 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   // If the response is not ok (4xx, 5xx), attempt to parse error message
   if (!response.ok) {
     let errorMessage = 'An error occurred';
+    let rawDetail = null;
     try {
       const errorData = await response.json();
-      errorMessage = errorData.detail || errorData.message || errorMessage;
+      rawDetail = errorData.detail;
+      errorMessage = typeof errorData.detail === 'string' ? errorData.detail : (errorData.message || errorMessage);
     } catch {
       // Not JSON
     }
-    throw new Error(errorMessage);
+    const error = new Error(errorMessage);
+    (error as any).detail = rawDetail;
+    throw error;
   }
 
   // Handle 204 No Content or empty responses

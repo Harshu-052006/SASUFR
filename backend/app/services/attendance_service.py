@@ -729,7 +729,9 @@ async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, 
         "student_id": student["id"],
         "check_in": saved["check_in"],
         "status": saved["status"],
-        "distance_km": distance
+        "distance_km": distance,
+        "subject": session.get("subject"),
+        "class_name": session.get("class_name")
     }
 
 
