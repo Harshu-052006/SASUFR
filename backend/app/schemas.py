@@ -537,3 +537,27 @@ class SessionLogOut(BaseModel):
     actual_start_time: str
     actual_end_time: str | None = None
     status: str
+
+
+class ProfileChangeRequestCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    
+    full_name: str | None = None
+    email: EmailStr | None = None
+    department: str | None = None
+    designation: str | None = None
+    employee_id: str | None = None
+
+
+class ProfileChangeRequestReview(BaseModel):
+    status: Literal["approved", "rejected"]
+
+
+class ProfileChangeRequestOut(BaseModel):
+    id: str
+    teacher_id: int
+    requested_changes: dict
+    status: str
+    timestamp: str
+    reviewed_by: int | None = None
+    review_timestamp: str | None = None

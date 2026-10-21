@@ -9,7 +9,8 @@ from ..database.mongo import get_database
 from ..dependencies import get_current_user
 from ..utils.time import date_key
 from ..models import ROLE_TEACHER
-from ..schemas import TeacherStats, TeacherAttendanceRow, MarkAttendanceRequest, ManualAttendanceRequest, UserOut, ClassSessionCreate, ClassSessionOut, TeacherClassSessionOut
+from ..schemas import TeacherStats, TeacherAttendanceRow, MarkAttendanceRequest, ManualAttendanceRequest, UserOut, ClassSessionCreate, ClassSessionOut, TeacherClassSessionOut, ProfileChangeRequestCreate, ProfileChangeRequestOut
+from ..services.profile_request_service import submit_profile_change_request, get_teacher_change_requests
 from ..services.attendance_service import (
     get_teacher_stats, 
     get_teacher_today_rows, 
@@ -39,6 +40,23 @@ async def teacher_stats(current_user: dict = Depends(_require_teacher), db: Asyn
     if not department:
         raise HTTPException(status_code=400, detail="Faculty department not configured.")
     return await get_teacher_stats(db, current_user)
+
+
+@router.post("/teacher/profile/change-requests", response_model=ProfileChangeRequestOut)
+async def submit_profile_change(
+    payload: ProfileChangeRequestCreate,
+    current_user: dict = Depends(_require_teacher),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    return await submit_profile_change_request(db, current_user, payload)
+
+
+@router.get("/teacher/profile/change-requests", response_model=list[ProfileChangeRequestOut])
+async def list_my_profile_changes(
+    current_user: dict = Depends(_require_teacher),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    return await get_teacher_change_requests(db, current_user["id"])
 
 
 @router.get("/teacher/department/stats", response_model=TeacherStats)

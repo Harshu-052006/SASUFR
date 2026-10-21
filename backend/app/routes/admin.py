@@ -14,7 +14,8 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from ..database.mongo import get_database
 from ..dependencies import get_current_user
 from ..models import ROLE_ADMIN
-from ..schemas import AdminAccountCreate, AdminDeleteRequest, AdminResetPasswordRequest, AdminSetActiveRequest, AdminStats, AdminUserUpdateRequest, TeacherCreate, UserOut, WeeklyReport, PunctualityReport, UserStatusReport, AdminConfig, AdminConfigUpdate, FacultyAttendanceReport, MonitoringLocation, MonthlyAttendanceSummary, AdminBulkUpdateClassYearRequest
+from ..schemas import AdminAccountCreate, AdminDeleteRequest, AdminResetPasswordRequest, AdminSetActiveRequest, AdminStats, AdminUserUpdateRequest, TeacherCreate, UserOut, WeeklyReport, PunctualityReport, UserStatusReport, AdminConfig, AdminConfigUpdate, FacultyAttendanceReport, MonitoringLocation, MonthlyAttendanceSummary, AdminBulkUpdateClassYearRequest, ProfileChangeRequestOut, ProfileChangeRequestReview
+from ..services.profile_request_service import get_all_change_requests, review_profile_change_request
 from ..services.attendance_service import get_admin_stats, serialize_attendance, get_recent_attendance_logs, get_attendance_report_rows, get_monthly_attendance_summary_rows
 from ..services.email_service import send_password_changed, send_account_approved_notice, send_account_rejected_notice
 from ..services.security_service import log_security_event, get_security_logs
@@ -164,6 +165,24 @@ async def update_admin_config(payload: AdminConfigUpdate, current_user: dict = D
         metadata=update_data
     )
     return {"message": "System configuration updated successfully."}
+
+@router.get("/admin/profile-change-requests", response_model=list[ProfileChangeRequestOut])
+async def list_profile_change_requests(
+    status: str | None = Query(None, description="Filter by status (pending, approved, rejected)"),
+    current_user: dict = Depends(_require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    return await get_all_change_requests(db, status)
+
+
+@router.patch("/admin/profile-change-requests/{request_id}/review", response_model=ProfileChangeRequestOut)
+async def review_profile_change(
+    request_id: str,
+    payload: ProfileChangeRequestReview,
+    current_user: dict = Depends(_require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    return await review_profile_change_request(db, request_id, current_user, payload.status)
 
 @router.get("/admin/stats", response_model=AdminStats)
 async def admin_stats(current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
