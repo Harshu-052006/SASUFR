@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 import io
+import random
+import uuid
 from typing import Any
 
 from fastapi import HTTPException
@@ -33,8 +35,20 @@ def _decode_image(image_data: str):
         raise HTTPException(status_code=400, detail="Invalid image data") from exc
     return face_recognition.load_image_file(io.BytesIO(raw))
 
+_ACTIVE_LIVENESS_SESSIONS: dict[str, list[str]] = {}
 
-async def verify_liveness(image_data: str, challenge: str | None) -> None:
+def generate_liveness_challenge_sequence() -> tuple[str, list[str]]:
+    session_id = str(uuid.uuid4())
+    # Choose 2 or 3 random challenges, allowing duplicates or simple choices
+    # To avoid immediate repetition, we can shuffle a list or just pick randoms
+    pool = ["smile", "turn_left", "turn_right"]
+    num_challenges = random.randint(2, 3)
+    challenges = random.choices(pool, k=num_challenges)
+    _ACTIVE_LIVENESS_SESSIONS[session_id] = challenges
+    return session_id, challenges
+
+
+def _verify_single_frame(image_data: str, challenge: str) -> None:
     if not FACE_AVAILABLE or not challenge:
         return
 
@@ -79,6 +93,23 @@ async def verify_liveness(image_data: str, challenge: str | None) -> None:
         elif challenge == "turn_right":
             if dist_left_eye >= dist_right_eye * 0.9:
                 raise HTTPException(status_code=400, detail="Liveness failed: Please turn your head to your RIGHT")
+
+
+async def verify_liveness_sequence(session_id: str | None, frames: list[str] | None) -> None:
+    if not FACE_AVAILABLE:
+        return
+    if not session_id or not frames:
+        raise HTTPException(status_code=400, detail="Liveness session ID and frames are required.")
+        
+    expected_challenges = _ACTIVE_LIVENESS_SESSIONS.pop(session_id, None)
+    if not expected_challenges:
+        raise HTTPException(status_code=400, detail="Invalid or expired liveness session.")
+        
+    if len(frames) != len(expected_challenges):
+        raise HTTPException(status_code=400, detail=f"Expected {len(expected_challenges)} liveness frames, got {len(frames)}.")
+        
+    for frame, challenge in zip(frames, expected_challenges):
+        _verify_single_frame(frame, challenge)
 
 
 async def extract_encoding(image_data: str) -> list[float]:

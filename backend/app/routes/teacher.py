@@ -242,7 +242,8 @@ async def mark_face_attendance(
         image=payload.image, 
         latitude=payload.latitude, 
         longitude=payload.longitude,
-        liveness_challenge=payload.liveness_challenge
+        liveness_session_id=payload.liveness_session_id,
+        liveness_frames=payload.liveness_frames
     )
 
 

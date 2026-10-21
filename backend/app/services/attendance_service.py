@@ -13,7 +13,7 @@ from ..schemas import AttendanceOut, AttendanceStats, MonthlyAttendanceSummary, 
 from ..utils.geo import is_within_radius
 from ..utils.time import date_key, iso_ist, now_ist, time_key
 from .email_service import get_last_mail_error, send_absent_notice
-from .face_service import extract_encoding, extract_multiple_encodings, find_best_match, find_matches, verify_liveness
+from .face_service import extract_encoding, extract_multiple_encodings, find_best_match, find_matches, verify_liveness_sequence
 
 
 def serialize_attendance(doc: dict):
@@ -648,7 +648,18 @@ async def get_active_class_sessions(
     return sessions
 
 
-async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, session_id: str | int, room_code: str, image: str, latitude: float | None, longitude: float | None, liveness_challenge: str | None = None) -> dict:
+async def mark_student_self_attendance(
+    db: AsyncIOMotorDatabase,
+    student: dict,
+    session_id: str | int,
+    image: str,
+    latitude: float | None,
+    longitude: float | None,
+    room_code: str = "",
+    liveness_challenge: str | None = None,
+    liveness_session_id: str | None = None,
+    liveness_frames: list[str] | None = None
+) -> dict:
     if not student.get("is_active"):
         raise HTTPException(status_code=403, detail="Account is deactivated")
         
@@ -730,8 +741,8 @@ async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, 
         if not allowed:
             raise HTTPException(status_code=400, detail=f"Attendance can only be marked within {float(geo_policy['max_distance_km']):g} km of campus")
 
-    if liveness_challenge:
-        await verify_liveness(image, liveness_challenge)
+    if liveness_session_id and liveness_frames:
+        await verify_liveness_sequence(liveness_session_id, liveness_frames)
 
     # Extract face from student image
     candidates = await extract_multiple_encodings(image)
@@ -770,7 +781,7 @@ async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, 
     }
 
 
-async def mark_attendance_by_face(db: AsyncIOMotorDatabase, *, teacher: dict, image: str, latitude: float | None, longitude: float | None, liveness_challenge: str | None = None) -> dict:
+async def mark_attendance_by_face(db: AsyncIOMotorDatabase, *, teacher: dict, image: str, latitude: float | None, longitude: float | None, liveness_session_id: str | None = None, liveness_frames: list[str] | None = None) -> dict:
     if not teacher.get("is_active"):
         raise HTTPException(status_code=403, detail="Account is deactivated")
 
@@ -794,8 +805,8 @@ async def mark_attendance_by_face(db: AsyncIOMotorDatabase, *, teacher: dict, im
     if not teacher_department:
         raise HTTPException(status_code=400, detail="Teacher department is not configured")
 
-    if liveness_challenge:
-        await verify_liveness(image, liveness_challenge)
+    if liveness_session_id and liveness_frames:
+        await verify_liveness_sequence(liveness_session_id, liveness_frames)
 
     # Extract all faces from the image
     candidates = await extract_multiple_encodings(image)
