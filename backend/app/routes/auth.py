@@ -64,7 +64,7 @@ async def register(
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
     email = payload.email.lower().strip()
-    roll_number = payload.roll_number.strip()
+    roll_number = payload.roll_number.strip() if payload.roll_number else ""
     
     # Registration Logic based on role
     requested_role = payload.requested_role.strip().lower() if payload.requested_role else "student"
@@ -73,7 +73,7 @@ async def register(
     
     if requested_role == "student":
         # 1. Check Whitelist
-        valid_student = await db.valid_students.find_one({"roll_number": roll_number})
+        valid_student = await db.valid_students.find_one({"roll_number": roll_number}) if roll_number else None
         if valid_student:
             payload.program = valid_student.get("program")
             payload.enrolled_subjects = valid_student.get("enrolled_subjects", [])
@@ -101,12 +101,11 @@ async def register(
         approval_status = "pending"
     else:
         raise HTTPException(status_code=400, detail="Invalid role requested.")
-    roll_number = payload.roll_number.strip()
 
     if await get_user_by_email(db, email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    if await db.users.find_one({"roll_number": roll_number}):
+    if roll_number and await db.users.find_one({"roll_number": roll_number}):
         raise HTTPException(status_code=400, detail="Roll number already registered")
 
     if not payload.department or not payload.department.strip():

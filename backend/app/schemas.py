@@ -17,7 +17,7 @@ class TokenData(BaseModel):
 class UserBase(BaseModel):
     full_name: str | None = None
     email: EmailStr
-    roll_number: str
+    roll_number: str | None = None
     department: str | None = None
     department_id: str | None = None
     program: str | None = None
@@ -179,7 +179,7 @@ class UserOut(BaseModel):
     id: int
     full_name: str | None = None
     email: EmailStr
-    roll_number: str
+    roll_number: str | None = None
     profile_picture: str | None = None
     is_active: bool
     is_verified: bool

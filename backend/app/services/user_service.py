@@ -13,6 +13,7 @@ from ..models import ROLE_ADMIN, ROLE_STUDENT, ROLE_TEACHER, VALID_ROLES
 from ..schemas import AdminAccountCreate, AdminUserUpdateRequest, TeacherCreate, UserCreate, UserProfileUpdate
 from ..utils.security import create_access_token, hash_password, otp_hash, otp_salt, verify_password
 from ..utils.time import iso_ist, now_ist
+from ..utils.roll_number import extract_roll_sequence
 
 
 def _normalize_role(role: str | None, is_admin: bool = False) -> str:
@@ -50,11 +51,26 @@ async def create_registered_user(db: AsyncIOMotorDatabase, payload: UserCreate, 
         {"_id": "users"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
     )
     role = ROLE_TEACHER if payload.requested_role == "teacher" else ROLE_STUDENT
+    roll_number = payload.roll_number.strip() if payload.roll_number else ""
+    
+    if roll_number:
+        seq_val = extract_roll_sequence(roll_number)
+        if seq_val > 0:
+            seq_doc = await db.counters.find_one({"_id": "roll_numbers"})
+            current_seq = int(seq_doc["seq"]) if seq_doc and "seq" in seq_doc else 0
+            if seq_val > current_seq:
+                await db.counters.update_one({"_id": "roll_numbers"}, {"$set": {"seq": seq_val}}, upsert=True)
+    else:
+        roll_seq = await db.counters.find_one_and_update(
+            {"_id": "roll_numbers"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
+        )
+        roll_number = f"STU-{int(roll_seq['seq']):05d}"
+
     doc = {
         "id": int(user_seq["seq"]),
         "full_name": payload.full_name,
         "email": payload.email.lower().strip(),
-        "roll_number": payload.roll_number.strip(),
+        "roll_number": roll_number,
         "hashed_password": hash_password(payload.password),
         "profile_picture": None,
         "is_active": is_active,
