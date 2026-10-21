@@ -14,6 +14,19 @@ class TokenData(BaseModel):
     email: str | None = None
 
 
+class AnnouncementCreate(BaseModel):
+    message: str
+    expires_at: str
+
+class AnnouncementOut(BaseModel):
+    id: int | str
+    department: str
+    message: str
+    created_by: int | str
+    created_at: str
+    expires_at: str
+
+
 class UserBase(BaseModel):
     full_name: str | None = None
     email: EmailStr
@@ -561,3 +574,21 @@ class ProfileChangeRequestOut(BaseModel):
     timestamp: str
     reviewed_by: int | None = None
     review_timestamp: str | None = None
+
+
+class AnnouncementCreate(BaseModel):
+    message: str
+    title: str | None = "Important Announcement"
+    department: str | None = None
+    duration_hours: int = 24
+    expires_at: str | None = None
+
+
+class AnnouncementOut(BaseModel):
+    id: int | str
+    department: str
+    message: str
+    title: str | None = "Important Announcement"
+    created_by: int | str | None = None
+    created_at: str
+    expires_at: str

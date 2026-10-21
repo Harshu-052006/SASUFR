@@ -267,6 +267,8 @@ from app.routes.timetable import router as timetable_router
 from app.routes.hierarchy import router as hierarchy_router
 from app.routes.batch import router as batch_router
 from app.routes.electives import router as electives_router
+from app.routes.hod import router as hod_router
+from app.routes.announcements import router as announcements_router
 
 app.include_router(auth_router)
 app.include_router(attendance_router)
@@ -277,7 +279,7 @@ app.include_router(timetable_router)
 app.include_router(hierarchy_router)
 app.include_router(batch_router)
 app.include_router(electives_router)
-from app.routes.announcements import router as announcements_router
+app.include_router(hod_router)
 app.include_router(announcements_router)
 
 

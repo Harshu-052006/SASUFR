@@ -1,59 +1,46 @@
 from __future__ import annotations
 
+from typing import List, Optional
 from datetime import timedelta
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel
 
-from ..database.mongo import get_database, next_sequence
-from ..dependencies import get_current_user
-from ..models import ROLE_ADMIN, ROLE_TEACHER
-from ..utils.time import iso_ist, now_ist
+from app.database.mongo import get_database, next_sequence
+from app.dependencies import get_current_user
+from app.schemas import AnnouncementOut, AnnouncementCreate
+from app.models import ROLE_ADMIN, ROLE_TEACHER
+from app.utils.time import iso_ist, now_ist
 
-router = APIRouter(prefix="/announcements", tags=["announcements"])
-
-
-class AnnouncementCreate(BaseModel):
-    title: Optional[str] = "Important Announcement"
-    message: str
-    department: Optional[str] = None
-    duration_hours: int = 24
+router = APIRouter(prefix="/announcements", tags=["Announcements"])
 
 
-def serialize_announcement(doc: dict) -> dict:
-    if not doc:
-        return doc
-    doc = dict(doc)
-    doc.pop("_id", None)
-    return doc
-
-
-@router.get("/active")
+@router.get("/active", response_model=List[AnnouncementOut])
 async def get_active_announcements(
+    request: Request,
     department: Optional[str] = Query(None),
-    request: Request = None,
-    db: AsyncIOMotorDatabase = Depends(get_database),
+    db: AsyncIOMotorDatabase = Depends(get_database)
 ):
-    now_str = iso_ist()
-    query: dict = {
-        "is_active": True,
-        "expires_at": {"$gt": now_str},
-    }
+    target_dept = department
+    try:
+        user = await get_current_user(request=request, token="", db=db)
+        if user and user.get("department"):
+            target_dept = user.get("department")
+    except Exception:
+        pass
 
-    # If department is provided as query param, filter for that department or All
-    if department:
-        query["$or"] = [{"department": department}, {"department": None}, {"department": "All"}]
+    current_time = iso_ist()
+    query: dict = {"expires_at": {"$gt": current_time}}
+    if target_dept:
+        query["$or"] = [{"department": target_dept}, {"department": "All"}, {"department": None}]
 
-    cursor = db.announcements.find(query).sort("created_at", -1).limit(10)
-    announcements = []
-    async for doc in cursor:
-        announcements.append(serialize_announcement(doc))
-
+    cursor = db.announcements.find(query).sort("created_at", -1)
+    announcements = await cursor.to_list(length=20)
+    for ann in announcements:
+        ann.pop("_id", None)
     return announcements
 
 
-@router.get("")
+@router.get("", response_model=List[AnnouncementOut])
 async def list_announcements(
     db: AsyncIOMotorDatabase = Depends(get_database),
     current_user: dict = Depends(get_current_user),
@@ -66,13 +53,13 @@ async def list_announcements(
             query["$or"] = [{"department": dept}, {"department": None}, {"department": "All"}]
 
     cursor = db.announcements.find(query).sort("created_at", -1).limit(50)
-    results = []
-    async for doc in cursor:
-        results.append(serialize_announcement(doc))
+    results = await cursor.to_list(length=50)
+    for doc in results:
+        doc.pop("_id", None)
     return results
 
 
-@router.post("")
+@router.post("", response_model=AnnouncementOut)
 async def create_announcement(
     payload: AnnouncementCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -87,22 +74,20 @@ async def create_announcement(
 
     dept = payload.department or current_user.get("department") or "All"
     announcement_id = await next_sequence("announcements")
-    expires_at = (now_ist() + timedelta(hours=max(1, payload.duration_hours))).isoformat()
+    expires_at = payload.expires_at or (now_ist() + timedelta(hours=max(1, payload.duration_hours))).isoformat()
 
     doc = {
         "id": announcement_id,
         "title": payload.title.strip() if payload.title else "Important Announcement",
         "message": payload.message.strip(),
         "department": dept,
-        "created_by": current_user.get("full_name") or current_user.get("email"),
-        "created_by_id": current_user.get("id"),
+        "created_by": current_user.get("full_name") or current_user.get("email") or current_user.get("id"),
         "created_at": iso_ist(),
         "expires_at": expires_at,
-        "is_active": True,
     }
 
-    await db.announcements.insert_one(doc)
-    return {"message": "Announcement broadcast successfully", "announcement": serialize_announcement(doc)}
+    await db.announcements.insert_one(doc.copy())
+    return doc
 
 
 @router.delete("/{announcement_id}")
@@ -114,10 +99,11 @@ async def expire_announcement(
     role = (current_user.get("role") or "").lower()
     query: dict = {"id": announcement_id}
     if role not in (ROLE_ADMIN, "admin"):
-        # Teachers can only expire their own
-        query["created_by_id"] = current_user.get("id")
+        dept = current_user.get("department")
+        if dept:
+            query["department"] = dept
 
-    res = await db.announcements.update_one(query, {"$set": {"is_active": False, "updated_at": iso_ist()}})
+    res = await db.announcements.update_one(query, {"$set": {"expires_at": iso_ist()}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Announcement not found or unauthorized to delete.")
 
