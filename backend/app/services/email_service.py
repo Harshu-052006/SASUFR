@@ -216,3 +216,29 @@ async def send_account_rejected_notice(email: str) -> bool:
     return await send_email(email, f"Smart Attendance System Using Face Recognition - {title}", content, html)
 
 
+def check_mail_health_sync() -> dict:
+    if not settings.mail_enabled:
+        return {"status": "disabled", "error": None}
+    if not settings.mail_username or not settings.mail_password or not settings.mail_from:
+        return {"status": "degraded", "error": "Missing SMTP credentials (username, password, or sender)"}
+    try:
+        timeout = 5
+        if settings.mail_ssl_tls:
+            with smtplib.SMTP_SSL(settings.mail_server, settings.mail_port, timeout=timeout) as client:
+                if settings.use_credentials:
+                    client.login(settings.mail_username, settings.mail_password)
+        else:
+            with smtplib.SMTP(settings.mail_server, settings.mail_port, timeout=timeout) as client:
+                if settings.mail_starttls:
+                    client.starttls()
+                if settings.use_credentials:
+                    client.login(settings.mail_username, settings.mail_password)
+        return {"status": "healthy", "error": None}
+    except Exception as exc:
+        return {"status": "degraded", "error": str(exc)}
+
+
+async def check_mail_health() -> dict:
+    return await asyncio.to_thread(check_mail_health_sync)
+
+

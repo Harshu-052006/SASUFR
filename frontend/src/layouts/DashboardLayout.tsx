@@ -44,6 +44,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     } catch (err) {
       // Ignore
     } finally {
+      localStorage.removeItem("access_token");
       navigate("/login");
     }
   };

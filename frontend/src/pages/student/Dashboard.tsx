@@ -11,8 +11,7 @@ import {
 } from "../../components/ui/dialog";
 import { apiFetch } from "../../lib/api";
 import { 
-  Camera, MapPin, MapPinOff, AlertTriangle, 
-  CheckCircle2, Clock, Calendar as CalendarIcon, FileText, Loader2, Radio, AlertCircle
+  Camera, MapPin, Loader2, Radio, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { AnnouncementBanner } from "../../components/AnnouncementBanner";

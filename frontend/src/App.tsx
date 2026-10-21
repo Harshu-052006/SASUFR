@@ -7,6 +7,7 @@ import { Register } from "./pages/Register";
 import { Otp } from "./pages/Otp";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 
 // Admin
 import { AdminDashboard } from "./pages/admin/Dashboard";
@@ -18,7 +19,7 @@ import { Security as AdminSecurity } from "./pages/admin/Security";
 import { Timetables as AdminTimetables } from "./pages/admin/Timetables";
 
 // Student
-import { Dashboard as StudentDashboard } from "./pages/student/Dashboard";
+import { Dashboard as StudentDashboard } from "./pages/student/Dashboard";  
 import { Profile as StudentProfile } from "./pages/student/Profile";
 import { Settings as StudentSettings } from "./pages/student/Settings";
 
@@ -55,6 +56,7 @@ function App() {
           <Route path="/otp" element={<Otp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />

@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { apiFetch } from "../lib/api";
 
 export function Otp() {
   const navigate = useNavigate();

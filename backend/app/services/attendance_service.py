@@ -401,6 +401,41 @@ def _attendance_status_from_time(moment=None) -> str:
     return "Present"
 
 
+def _attendance_status_for_session(session: dict | None, moment: datetime | None = None, grace_minutes: int = 10) -> str:
+    moment = moment or now_ist()
+    if not session:
+        return _attendance_status_from_time(moment)
+    
+    # 1. If explicit lecture_start_time is given (e.g. "09:00" or "14:30")
+    lecture_start_str = session.get("lecture_start_time")
+    if lecture_start_str and ":" in str(lecture_start_str):
+        try:
+            parts = str(lecture_start_str).strip().split(":")
+            lec_hour = int(parts[0])
+            lec_min = int(parts[1])
+            lec_start = moment.replace(hour=lec_hour, minute=lec_min, second=0, microsecond=0)
+            cutoff = lec_start + timedelta(minutes=grace_minutes)
+            if moment > cutoff:
+                return "Late"
+            return "Present"
+        except Exception:
+            pass
+            
+    # 2. If actual session start_time ISO timestamp is available
+    start_time_str = session.get("start_time") or session.get("actual_start_time")
+    if start_time_str:
+        try:
+            start_dt = datetime.fromisoformat(str(start_time_str))
+            cutoff = start_dt + timedelta(minutes=grace_minutes)
+            if moment > cutoff:
+                return "Late"
+            return "Present"
+        except Exception:
+            pass
+            
+    return _attendance_status_from_time(moment)
+
+
 async def _insert_or_update_attendance(
     db: AsyncIOMotorDatabase, 
     *, 
@@ -708,7 +743,7 @@ async def mark_student_self_attendance(db: AsyncIOMotorDatabase, student: dict, 
     if not matches:
         raise HTTPException(status_code=403, detail="Face does not match your registered identity")
 
-    status = "Present"
+    status = _attendance_status_for_session(session, now_ist())
     
     saved, was_created = await _insert_or_update_attendance(
         db,

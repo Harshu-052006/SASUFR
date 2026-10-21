@@ -23,7 +23,7 @@ import asyncio
 from contextlib import asynccontextmanager, suppress
 from datetime import timedelta
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -49,6 +49,7 @@ from app.utils.time import iso_ist
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR.parent / "frontend-legacy"
+REACT_DIST_DIR = BASE_DIR.parent / "frontend" / "dist"
 
 # ── Startup validation ────────────────────────────────────────────────────────
 _INSECURE_KEYS = {"change-me-in-production", "change-this-secret", "", "your-secret-key"}
@@ -118,6 +119,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if (REACT_DIST_DIR / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(REACT_DIST_DIR / "assets")), name="assets")
 
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
@@ -202,6 +206,9 @@ async def _absent_notices_worker() -> None:
 
 @app.get("/")
 async def root():
+    react_index = REACT_DIST_DIR / "index.html"
+    if react_index.exists():
+        return FileResponse(react_index)
     index_file = FRONTEND_DIR / "index.html"
     if index_file.exists():
         return RedirectResponse(url="/static/index.html")
@@ -211,11 +218,14 @@ async def root():
 @app.get("/health")
 async def health():
     face_status = get_face_recognition_status()
+    from app.services.email_service import check_mail_health
+    mail_status = await check_mail_health()
     return {
         "status": "ok",
         "time": iso_ist(),
         "face_recognition_available": face_status["available"],
         "face_recognition_error": face_status["error"],
+        "mail_service": mail_status,
     }
 
 
@@ -267,6 +277,21 @@ app.include_router(timetable_router)
 app.include_router(hierarchy_router)
 app.include_router(batch_router)
 app.include_router(electives_router)
+from app.routes.announcements import router as announcements_router
+app.include_router(announcements_router)
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def spa_catch_all(full_path: str):
+    react_index = REACT_DIST_DIR / "index.html"
+    if full_path.startswith(("api/", "health", "docs", "openapi.json", "static/", "assets/", "ws")):
+        raise HTTPException(status_code=404, detail="Not Found")
+    if react_index.exists():
+        return FileResponse(react_index)
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return RedirectResponse(url="/static/index.html")
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 if __name__ == "__main__":

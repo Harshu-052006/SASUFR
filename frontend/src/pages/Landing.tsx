@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Users, ShieldAlert, BarChart3, Shield, Settings, User, Calendar } from "lucide-react";
 import gsap from "gsap";
@@ -166,8 +166,12 @@ export function Landing() {
       </main>
       
       {/* Footer */}
-      <footer className="py-8 text-center text-sm text-[#64748B] border-t border-[#2A3854] bg-[#0B0F17] relative z-10">
-        &copy; {new Date().getFullYear()} SmartFace Systems. All rights reserved.
+      <footer className="py-8 px-6 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto text-xs text-[#64748B] border-t border-[#2A3854]/40 bg-[#0B0F17] relative z-10">
+        <div>&copy; {new Date().getFullYear()} SASUFR SmartFace Systems. All rights reserved.</div>
+        <div className="flex items-center gap-6 mt-4 sm:mt-0">
+          <Link to="/privacy-policy" className="hover:text-[#38BDF8] transition-colors">Privacy & Biometrics Policy</Link>
+          <Link to="/login" className="hover:text-white transition-colors">Portal Login</Link>
+        </div>
       </footer>
     </div>
   );

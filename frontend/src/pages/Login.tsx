@@ -21,10 +21,13 @@ export function Login() {
     
     try {
       // The API expects a JSON payload for login
-      await apiFetch("/login", {
+      const res: any = await apiFetch("/login", {
         method: "POST",
         body: JSON.stringify({ email, password })
       });
+      if (res?.access_token) {
+        localStorage.setItem("access_token", res.access_token);
+      }
       
       // Check user role to redirect appropriately
       const user = await apiFetch("/users/me");

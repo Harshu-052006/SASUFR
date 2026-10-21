@@ -18,6 +18,7 @@ export function Sidebar({ isOpen, setIsOpen, role }: SidebarProps) {
     } catch (err) {
       console.error("Logout failed or session already invalid", err);
     } finally {
+      localStorage.removeItem("access_token");
       navigate("/login");
     }
   };

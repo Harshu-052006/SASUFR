@@ -84,6 +84,15 @@ async def register(
             official_domain = settings_doc.get("official_domain") if settings_doc else None
             
             if not official_domain or not email.endswith(f"@{official_domain.lstrip('@')}"):
+                await log_security_event(
+                    db,
+                    event_type="FAILED_WHITELIST_CHECK",
+                    severity="warning",
+                    details=f"Registration rejected: roll number '{roll_number}' not on whitelist and email '{email}' does not match official domain '{official_domain}'",
+                    metadata={"email": email, "roll_number": roll_number},
+                    ip_address=(request.client.host if request and request.client else None),
+                    user_agent=(request.headers.get("user-agent") if request else None),
+                )
                 raise HTTPException(status_code=400, detail="Student roll number not on whitelist and email does not match official organization domain.")
     elif requested_role == "teacher":
         if not payload.id_card_image:
@@ -202,6 +211,16 @@ async def login(request: Request, response: Response, payload: LoginRequest, db:
 
     await verify_student_login(user, payload.password)
 
+    if user.get("must_change_password") and user.get("temp_password_expires_at"):
+        try:
+            expires_dt = datetime.fromisoformat(user["temp_password_expires_at"])
+            if now_ist() > expires_dt:
+                raise HTTPException(status_code=400, detail="Temporary password has expired. Please contact the administrator.")
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+
     if not user.get("is_verified", False):
         raise HTTPException(status_code=400, detail="Account verification is required. Please verify your email address to proceed.")
 
@@ -222,6 +241,7 @@ async def login(request: Request, response: Response, payload: LoginRequest, db:
 
 
 @router.post("/verify-otp")
+@limiter.limit("5/minute")
 async def verify_otp(
     payload: OTPVerifyRequest,
     background_tasks: BackgroundTasks,
@@ -276,7 +296,9 @@ async def verify_otp(
 
 
 @router.post("/resend-otp")
+@limiter.limit("5/minute")
 async def resend_otp_endpoint(
+    request: Request,
     payload: OTPRequest,
     background_tasks: BackgroundTasks,
     db: AsyncIOMotorDatabase = Depends(get_database),

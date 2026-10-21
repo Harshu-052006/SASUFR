@@ -304,7 +304,7 @@ async def admin_reset_password(user_id: int, payload: AdminResetPasswordRequest,
     target = await get_user_by_id(db, user_id)
     if not target:
         raise HTTPException(status_code=404, detail="Account not found.")
-    await reset_password(db, target)
+    temp_password = await reset_password(db, target)
     await log_security_event(
         db,
         event_type="ADMIN_RESET_PASSWORD",
@@ -315,7 +315,7 @@ async def admin_reset_password(user_id: int, payload: AdminResetPasswordRequest,
         ip_address=None,
         user_agent=None,
     )
-    return {"message": "Password reset successfully", "temporary_password": "SASUFR"}
+    return {"message": "Password reset successfully", "temporary_password": temp_password}
 
 
 @router.delete("/admin/users/{user_id}")
@@ -543,6 +543,21 @@ async def admin_import_students(file: UploadFile = File(...), current_user: dict
                     "created_at": iso_ist()
                 })
                 
+        # Validate direct users against ID collisions
+        seen_ids = set()
+        for u in direct_users:
+            uid = u.get("id")
+            if uid is not None:
+                if uid in seen_ids:
+                    raise HTTPException(status_code=400, detail=f"Duplicate ID {uid} found within uploaded CSV.")
+                seen_ids.add(uid)
+                existing_user = await db.users.find_one({"id": uid})
+                if existing_user and existing_user.get("email") != u["email"]:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"CSV ID collision: ID {uid} is already assigned to user '{existing_user.get('email')}'. Please correct CSV IDs or omit the ID column."
+                    )
+
         # Insert direct users
         for u in direct_users:
             if u["id"] is None:
