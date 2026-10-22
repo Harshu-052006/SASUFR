@@ -218,7 +218,7 @@ async def _absent_notices_worker() -> None:
             await asyncio.sleep(60)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     react_index = REACT_DIST_DIR / "index.html"
     if react_index.exists():
@@ -229,7 +229,7 @@ async def root():
     return {"message": "Smart Attendance System Using Face Recognition API is operational."}
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     face_status = get_face_recognition_status()
     from app.services.email_service import check_mail_health
