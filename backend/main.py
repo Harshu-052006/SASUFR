@@ -151,12 +151,6 @@ if FRONTEND_DIR.exists():
         app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
 
 
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    icon_file = FRONTEND_DIR / "favicon.svg"
-    if icon_file.exists():
-        return FileResponse(icon_file, media_type="image/svg+xml")
-    return Response(status_code=204)
 
 
 async def _absent_notices_worker() -> None:
@@ -224,6 +218,7 @@ async def _absent_notices_worker() -> None:
             await asyncio.sleep(60)
 
 
+<<<<<<< HEAD
 @app.get("/")
 async def root():
     react_index = REACT_DIST_DIR / "index.html"
@@ -233,6 +228,8 @@ async def root():
     if index_file.exists():
         return RedirectResponse(url="/static/index.html")
     return {"message": "Smart Attendance System Using Face Recognition API is operational."}
+=======
+>>>>>>> origin/bm1-4.1-frontend-switch
 
 
 @app.get("/health")
@@ -305,9 +302,13 @@ app.include_router(announcements_router)
 
 @app.get("/{full_path:path}", include_in_schema=False)
 async def spa_catch_all(full_path: str):
-    react_index = REACT_DIST_DIR / "index.html"
     if full_path.startswith(("api/", "health", "docs", "openapi.json", "static/", "assets/", "ws")):
         raise HTTPException(status_code=404, detail="Not Found")
+    if full_path and REACT_DIST_DIR.exists():
+        candidate = REACT_DIST_DIR / full_path
+        if candidate.is_file():
+            return FileResponse(candidate)
+    react_index = REACT_DIST_DIR / "index.html"
     if react_index.exists():
         return FileResponse(react_index)
     index_file = FRONTEND_DIR / "index.html"
