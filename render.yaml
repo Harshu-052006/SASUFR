@@ -26,6 +26,10 @@ services:
     # Sensitive values (SECRET_KEY, MONGODB_URI, MAIL_PASSWORD) must be set
     # in the Render Dashboard → Environment tab. Never commit real values here.
     envVars:
+      # ── Python Version ─────────────────────────────────────────────────────
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
       # ── JWT ────────────────────────────────────────────────────────────────
       - key: SECRET_KEY
         sync: false          # set manually in Render dashboard
