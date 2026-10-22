@@ -9,7 +9,7 @@ from ..limiter import limiter
 from ..database.mongo import get_database
 from ..dependencies import get_current_user
 from ..models import ROLE_ADMIN, ROLE_STUDENT, ROLE_TEACHER
-from ..schemas import ChangePasswordRequest, LoginRequest, OTPRequest, OTPVerifyRequest, Token, UserCreate, UserOut, UserProfileUpdate, ForgotPasswordRequest, ResetPasswordRequest, LivenessChallengeResponse
+from ..schemas import ChangePasswordRequest, LoginRequest, OTPRequest, OTPVerifyRequest, Token, UserCreate, UserOut, UserProfileUpdate, ForgotPasswordRequest, ResetPasswordRequest, LivenessChallengeResponse, SetNewPasswordRequest
 from ..services.attendance_service import serialize_attendance
 from ..services.email_service import get_last_mail_error, send_password_changed, send_registration_success, send_otp_email, send_password_reset_otp_email
 from ..services.face_service import extract_encoding, find_best_match, verify_liveness_sequence, generate_liveness_challenge_sequence
@@ -24,6 +24,7 @@ from ..services.user_service import (
     verify_student_login,
     update_password,
     update_user_profile,
+    force_set_password,
 )
 from ..utils.security import generate_otp, hash_password, otp_hash, otp_salt, verify_otp as verify_otp_hash
 from ..utils.time import iso_ist, get_campus_now
@@ -242,7 +243,7 @@ async def login(request: Request, response: Response, payload: LoginRequest, db:
         max_age=86400 * 7 # 7 days
     )
     
-    return Token(access_token=token)
+    return Token(access_token=token, must_change_password=user.get("must_change_password", False))
 
 
 @router.post("/verify-otp")
@@ -352,6 +353,28 @@ async def change_password(
         event_type="PASSWORD_CHANGED",
         severity="info",
         details=f"Password changed for {current_user['email']}",
+        user_id=current_user["id"],
+        ip_address=(request.client.host if request and request.client else None),
+        user_agent=(request.headers.get("user-agent") if request else None),
+    )
+    return {"message": "Password updated successfully"}
+
+
+@router.post("/users/me/set-new-password")
+async def set_new_password(
+    payload: SetNewPasswordRequest,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: dict = Depends(get_current_user),
+):
+    await force_set_password(db, current_user, payload.new_password)
+    background_tasks.add_task(send_password_changed, current_user["email"])
+    await log_security_event(
+        db,
+        event_type="PASSWORD_CHANGED",
+        severity="info",
+        details=f"Password changed for {current_user['email']} (must_change_password cleared)",
         user_id=current_user["id"],
         ip_address=(request.client.host if request and request.client else None),
         user_agent=(request.headers.get("user-agent") if request else None),

@@ -173,6 +173,18 @@ async def update_password(db: AsyncIOMotorDatabase, user: dict, current_password
     )
 
 
+async def force_set_password(db: AsyncIOMotorDatabase, user: dict, new_password: str) -> None:
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "hashed_password": hash_password(new_password),
+            "must_change_password": False,
+            "temp_password_expires_at": None,
+            "updated_at": iso_ist()
+        }},
+    )
+
+
 async def admin_update_user(db: AsyncIOMotorDatabase, target: dict, payload: AdminUserUpdateRequest) -> dict:
     updates: dict = {}
     if payload.full_name is not None:
