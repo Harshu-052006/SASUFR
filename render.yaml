@@ -109,3 +109,10 @@ services:
       #   ALLOWED_ORIGINS=https://your-frontend.onrender.com
       - key: ALLOWED_ORIGINS
         value: ""
+
+      # ── Biometric Encryption & AI ──────────────────────────────────────────
+      - key: ENCRYPTION_KEY
+        value: IPrylHxBpqhuvzbGxociHKl1Z1gfzgaRVe5se-GSRpM=
+
+      - key: GEMINI_API_KEY
+        value: AQ.Ab8RN6JHfn2MuHQZfOxa7sP62hmf546SHI7rdTOCvzLRIH90tQ

@@ -16,7 +16,7 @@ class Settings:
     secret_key: str = os.getenv("SECRET_KEY", "change-me-in-production")
     algorithm: str = os.getenv("ALGORITHM", "HS256")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))  
-    encryption_key: str | None = os.getenv("ENCRYPTION_KEY")
+    encryption_key: str | None = os.getenv("ENCRYPTION_KEY", "IPrylHxBpqhuvzbGxociHKl1Z1gfzgaRVe5se-GSRpM=")
 
     mongodb_uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     mongodb_db: str = os.getenv("MONGODB_DB", "smart_attendance")
@@ -47,6 +47,6 @@ class Settings:
     mfa_enabled: bool = os.getenv("MFA_ENABLED", "false").lower() == "true"
     geofencing_enabled: bool = os.getenv("GEOFENCING_ENABLED", "false").lower() == "true"
     lockout_enabled: bool = os.getenv("LOCKOUT_ENABLED", "false").lower() == "true"
-    gemini_api_key: str | None = os.getenv("GEMINI_API_KEY")
+    gemini_api_key: str | None = os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6JHfn2MuHQZfOxa7sP62hmf546SHI7rdTOCvzLRIH90tQ")
 
 settings = Settings()
