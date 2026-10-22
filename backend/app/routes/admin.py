@@ -133,6 +133,7 @@ async def get_admin_config(current_user: dict = Depends(_require_admin), db: Asy
         "max_distance_km": settings.max_distance_km,
         "late_hour": settings.late_hour,
         "late_minute": settings.late_minute,
+        "grace_period_minutes": settings.grace_period_minutes,
         "absent_notice_hour": settings.absent_notice_hour,
         "absent_notice_minute": settings.absent_notice_minute,
         "mfa_enabled": settings.mfa_enabled,

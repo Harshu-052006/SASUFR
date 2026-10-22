@@ -410,15 +410,19 @@ async def get_student_attendance_history(db: AsyncIOMotorDatabase, user_id: int)
     return records
 
 
-def _attendance_status_from_time(moment=None) -> str:
+def _attendance_status_from_time(moment=None, session=None) -> str:
     moment = moment or get_campus_now()
+    if session:
+        return _attendance_status_for_session(session, moment)
     if (moment.hour, moment.minute) > (settings.late_hour, settings.late_minute):
         return "Late"
     return "Present"
 
 
-def _attendance_status_for_session(session: dict | None, moment: datetime | None = None, grace_minutes: int = 10) -> str:
-    moment = moment or now_ist()
+def _attendance_status_for_session(session: dict | None, moment: datetime | None = None, grace_minutes: int | None = None) -> str:
+    moment = moment or get_campus_now()
+    if grace_minutes is None:
+        grace_minutes = getattr(settings, "grace_period_minutes", 10)
     if not session:
         return _attendance_status_from_time(moment)
     
@@ -770,7 +774,7 @@ async def mark_student_self_attendance(
     if not matches:
         raise HTTPException(status_code=403, detail="Face does not match your registered identity")
 
-    status = _attendance_status_for_session(session, now_ist())
+    status = _attendance_status_from_time(session=session)
     
     saved, was_created = await _insert_or_update_attendance(
         db,
