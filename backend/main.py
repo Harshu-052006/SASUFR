@@ -218,7 +218,6 @@ async def _absent_notices_worker() -> None:
             await asyncio.sleep(60)
 
 
-<<<<<<< HEAD
 @app.get("/")
 async def root():
     react_index = REACT_DIST_DIR / "index.html"
@@ -228,8 +227,6 @@ async def root():
     if index_file.exists():
         return RedirectResponse(url="/static/index.html")
     return {"message": "Smart Attendance System Using Face Recognition API is operational."}
-=======
->>>>>>> origin/bm1-4.1-frontend-switch
 
 
 @app.get("/health")
@@ -315,6 +312,19 @@ async def spa_catch_all(full_path: str):
     if index_file.exists():
         return RedirectResponse(url="/static/index.html")
     raise HTTPException(status_code=404, detail="Not Found")
+
+# Mount the same routers under /api for the new React frontend (Vite dev server or built bundle)
+app.include_router(auth_router, prefix="/api")
+app.include_router(attendance_router, prefix="/api")
+app.include_router(teacher_router, prefix="/api")
+app.include_router(student_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
+app.include_router(timetable_router, prefix="/api")
+app.include_router(hierarchy_router, prefix="/api")
+app.include_router(batch_router, prefix="/api")
+app.include_router(electives_router, prefix="/api")
+app.include_router(hod_router, prefix="/api")
+app.include_router(announcements_router, prefix="/api")
 
 
 if __name__ == "__main__":
