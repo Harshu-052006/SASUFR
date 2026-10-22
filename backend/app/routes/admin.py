@@ -17,7 +17,7 @@ from ..models import ROLE_ADMIN
 from ..schemas import AdminAccountCreate, AdminDeleteRequest, AdminResetPasswordRequest, AdminSetActiveRequest, AdminStats, AdminUserUpdateRequest, TeacherCreate, UserOut, WeeklyReport, PunctualityReport, UserStatusReport, AdminConfig, AdminConfigUpdate, FacultyAttendanceReport, MonitoringLocation, MonthlyAttendanceSummary, AdminBulkUpdateClassYearRequest, ProfileChangeRequestOut, ProfileChangeRequestReview
 from ..services.profile_request_service import get_all_change_requests, review_profile_change_request
 from ..services.attendance_service import get_admin_stats, serialize_attendance, get_recent_attendance_logs, get_attendance_report_rows, get_monthly_attendance_summary_rows
-from ..services.email_service import send_password_changed, send_account_approved_notice, send_account_rejected_notice
+from ..services.email_service import send_password_changed, send_account_approved_notice, send_account_rejected_notice, check_smtp_connectivity
 from ..services.security_service import log_security_event, get_security_logs
 from ..services.user_service import create_teacher_user, delete_user, get_user_by_id, require_admin_password, reset_password, serialize_user, set_active_status, admin_update_user
 from ..services.user_service import create_admin_user, get_user_by_email, create_registered_user
@@ -166,6 +166,7 @@ async def update_admin_config(payload: AdminConfigUpdate, current_user: dict = D
     )
     return {"message": "System configuration updated successfully."}
 
+
 @router.get("/admin/profile-change-requests", response_model=list[ProfileChangeRequestOut])
 async def list_profile_change_requests(
     status: str | None = Query(None, description="Filter by status (pending, approved, rejected)"),
@@ -183,6 +184,25 @@ async def review_profile_change(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     return await review_profile_change_request(db, request_id, current_user, payload.status)
+
+
+@router.post("/admin/config/check-smtp")
+async def admin_check_smtp(
+    current_user: dict = Depends(_require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    success, err = await check_smtp_connectivity()
+    status = "ok" if success else "failing"
+    await db.config.update_one(
+        {"_id": "global"},
+        {"$set": {
+            "email_status": status,
+            "email_error": err,
+            "email_status_checked_at": iso_ist()
+        }},
+        upsert=True
+    )
+    return {"success": success, "error": err}
 
 @router.get("/admin/stats", response_model=AdminStats)
 async def admin_stats(current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):

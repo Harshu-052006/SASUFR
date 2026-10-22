@@ -118,6 +118,36 @@ async function loadAdminStats() {
                 const el = document.getElementById(id);
                 if (el) el.textContent = val;
             }
+
+            // Dynamically handle the SMTP warning banner based on stats
+            let banner = document.getElementById('smtpWarningBanner');
+            if (stats.email_status === 'failing') {
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'smtpWarningBanner';
+                    banner.style.background = 'rgba(239, 68, 68, 0.15)';
+                    banner.style.border = '1px solid #ef4444';
+                    banner.style.color = '#ef4444';
+                    banner.style.padding = '16px 24px';
+                    banner.style.borderRadius = '12px';
+                    banner.style.margin = '20px 40px 0 40px';
+                    banner.style.display = 'flex';
+                    banner.style.alignItems = 'center';
+                    banner.style.fontWeight = '700';
+                    banner.style.fontSize = '0.9rem';
+                    
+                    const mainContent = document.querySelector('.main-content');
+                    const pageStack = document.querySelector('.admin-page-stack');
+                    if (mainContent && pageStack) {
+                        mainContent.insertBefore(banner, pageStack);
+                    }
+                }
+                banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="margin-right: 12px; font-size: 1.2rem;"></i> SMTP Error: Email delivery is failing. Last error: ${stats.email_error || 'Unknown error'}. Please check SMTP configuration.`;
+            } else {
+                if (banner) {
+                    banner.remove();
+                }
+            }
         }
     } catch (e) { console.error("Admin Stats Failure", e); }
 }

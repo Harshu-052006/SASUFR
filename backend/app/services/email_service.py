@@ -8,10 +8,15 @@ from ..config import settings
 
 
 _LAST_MAIL_ERROR: str | None = None
+_LAST_MAIL_ERROR_DETAILS: str | None = None
 
 
 def get_last_mail_error() -> str | None:
     return _LAST_MAIL_ERROR
+
+
+def get_last_mail_error_details() -> str | None:
+    return _LAST_MAIL_ERROR_DETAILS
 
 
 def _set_last_mail_error(value: str | None) -> None:
@@ -83,6 +88,7 @@ def _get_premium_template(title: str, content: str, action_text: str = None, act
 
 
 def _send_email_sync(recipient: str, subject: str, text_body: str, html_body: str = None) -> bool:
+    global _LAST_MAIL_ERROR_DETAILS
     if not settings.mail_enabled:
         _set_last_mail_error("mail_disabled")
         # In local/demo mode we intentionally skip SMTP sends.
@@ -117,10 +123,12 @@ def _send_email_sync(recipient: str, subject: str, text_body: str, html_body: st
                 if settings.use_credentials:
                     client.login(settings.mail_username, settings.mail_password)
                 client.send_message(message)
+        _LAST_MAIL_ERROR_DETAILS = None
         _set_last_mail_error(None)
         return True
     except Exception as exc:
         error_text = str(exc)
+        _LAST_MAIL_ERROR_DETAILS = error_text
         if "5.4.5" in error_text or "Daily user sending limit exceeded" in error_text:
             _set_last_mail_error("quota_exceeded")
             print(f"[MAIL:QUOTA] {recipient} | {subject} | {exc}")
@@ -131,12 +139,65 @@ def _send_email_sync(recipient: str, subject: str, text_body: str, html_body: st
 
 
 async def send_email(recipient: str, subject: str, text_body: str, html_body: str = None) -> bool:
+    success = False
+    err_msg = None
     try:
-        return await asyncio.to_thread(_send_email_sync, recipient, subject, text_body, html_body)
+        success = await asyncio.to_thread(_send_email_sync, recipient, subject, text_body, html_body)
+        if not success:
+            err_msg = get_last_mail_error_details() or "SMTP send failed"
     except Exception as exc:
         _set_last_mail_error("smtp_error")
+        err_msg = str(exc)
         print(f"[MAIL:FALLBACK] {recipient} | {subject} | {text_body} | reason={exc}")
-        return False
+        success = False
+
+    # Record SMTP status in database
+    try:
+        from ..database.mongo import get_database
+        from ..utils.time import iso_ist
+        db = await get_database()
+        status = "ok" if success else "failing"
+        await db.config.update_one(
+            {"_id": "global"},
+            {"$set": {
+                "email_status": status,
+                "email_error": err_msg if not success else None,
+                "email_status_checked_at": iso_ist()
+            }},
+            upsert=True
+        )
+    except Exception as db_exc:
+        print(f"[MAIL:DB_LOG_ERROR] Failed to log email status to DB: {db_exc}")
+
+    return success
+
+
+def check_smtp_connectivity_sync() -> tuple[bool, str | None]:
+    """Lightweight connectivity check to the configured SMTP server."""
+    if not settings.mail_enabled:
+        return True, "mail_disabled"
+    if not settings.mail_username or not settings.mail_password or not settings.mail_from:
+        return False, "mail_not_configured"
+        
+    timeout_seconds = 8
+    try:
+        if settings.mail_ssl_tls:
+            with smtplib.SMTP_SSL(settings.mail_server, settings.mail_port, timeout=timeout_seconds) as client:
+                if settings.use_credentials:
+                    client.login(settings.mail_username, settings.mail_password)
+        else:
+            with smtplib.SMTP(settings.mail_server, settings.mail_port, timeout=timeout_seconds) as client:
+                if settings.mail_starttls:
+                    client.starttls()
+                if settings.use_credentials:
+                    client.login(settings.mail_username, settings.mail_password)
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
+
+async def check_smtp_connectivity() -> tuple[bool, str | None]:
+    return await asyncio.to_thread(check_smtp_connectivity_sync)
 
 
 async def send_otp_email(email: str, otp: str) -> bool:

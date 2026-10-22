@@ -71,6 +71,26 @@ async def lifespan(app: FastAPI):
     db = await get_database()
     await vector_store.initialize(db)
     
+    # Run SMTP health check on startup
+    async def run_startup_smtp_check():
+        try:
+            from app.services.email_service import check_smtp_connectivity
+            success, err = await check_smtp_connectivity()
+            status = "ok" if success else "failing"
+            await db.config.update_one(
+                {"_id": "global"},
+                {"$set": {
+                    "email_status": status,
+                    "email_error": err,
+                    "email_status_checked_at": iso_ist()
+                }},
+                upsert=True
+            )
+        except Exception as e:
+            print(f"[STARTUP:SMTP_CHECK_ERROR] Failed to run SMTP check: {e}")
+
+    asyncio.create_task(run_startup_smtp_check())
+    
     from app.scheduler import upcoming_lecture_worker
     
     app.state.absent_notices_task = asyncio.create_task(_absent_notices_worker())
