@@ -9,7 +9,7 @@ services:
     # All commands run from the repo root.
     rootDir: backend
 
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && pip install --no-deps face-recognition==1.3.0
 
     startCommand: >-
       gunicorn main:app
