@@ -11,6 +11,9 @@ def get_campus_now() -> datetime:
     return datetime.now(IST)
 
 
+now_ist = get_campus_now
+
+
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
