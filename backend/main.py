@@ -43,7 +43,7 @@ from app.routes.teacher import router as teacher_router
 from app.routes.student import router as student_router
 from app.services.attendance_service import send_absent_notifications
 from app.services.face_service import get_face_recognition_status
-from app.utils.time import now_ist
+from app.utils.time import get_campus_now
 from app.utils.time import iso_ist
 
 
@@ -149,7 +149,7 @@ async def _absent_notices_worker() -> None:
                 await asyncio.sleep(60)
                 continue
 
-            current = now_ist()
+            current = get_campus_now()
             db = await get_database()
             
             cutoff_passed = (current.hour, current.minute) >= (settings.absent_notice_hour, settings.absent_notice_minute)

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from ..database.mongo import get_database
 from ..dependencies import get_current_user
+from ..utils.time import get_campus_now
 
 router = APIRouter(tags=["timetable"])
 
@@ -58,7 +59,7 @@ async def _resolve_v2_schedule_for_student(db: AsyncIOMotorDatabase, current_use
 
 @router.get("/timetable/today")
 async def get_today_timetable(current_user: dict = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_database)):
-    now = datetime.now()
+    now = get_campus_now()
     day_name = now.strftime("%A") # Monday, Tuesday, etc.
     
     role = current_user.get("role", "").lower()
@@ -126,7 +127,7 @@ async def get_active_sessions(current_user: dict = Depends(get_current_user), db
         return []
         
     # Get today's resolved schedule for the student
-    now = datetime.now()
+    now = get_campus_now()
     day_name = now.strftime("%A")
     todays_slots = await _resolve_v2_schedule_for_student(db, current_user, day_name)
     slot_ids = [slot["id"] for slot in todays_slots]

@@ -37,7 +37,7 @@ def _is_admin(user: dict) -> bool:
 
 
 def _month_window(month: str | None) -> tuple[str, str]:
-    month_value = month or now_ist().strftime("%Y-%m")
+    month_value = month or get_campus_now().strftime("%Y-%m")
     try:
         month_start = datetime.strptime(month_value, "%Y-%m")
     except ValueError as exc:
@@ -69,7 +69,7 @@ async def export_admin_attendance(
     if not records:
         raise HTTPException(status_code=404, detail="No attendance records found for this date.")
         
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = get_campus_now().strftime("%Y%m%d_%H%M%S")
     
     if format == "excel":
         file_obj = generate_excel_report(records)
@@ -102,7 +102,7 @@ async def export_admin_report(
     if not records:
         raise HTTPException(status_code=404, detail="No attendance records found for the selected range.")
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = get_campus_now().strftime("%Y%m%d_%H%M%S")
     dept_slug = (department or "all_departments").strip().lower().replace(" ", "_") or "all_departments"
     scope_slug = scope.lower()
     range_slug = f"{from_date}_to_{to_date}"
@@ -363,7 +363,7 @@ async def admin_report_weekly(days: int = 6, current_user: dict = Depends(_requi
     labels: list[str] = []
     counts: list[int] = []
     for offset in range(days, -1, -1):
-        day = (now_ist() - timedelta(days=offset)).date().isoformat()
+        day = (get_campus_now() - timedelta(days=offset)).date().isoformat()
         labels.append(day)
         counts.append(await db.attendance.count_documents({"date": day, "status": {"$in": ["Present", "Late"]}}))
     return WeeklyReport(labels=labels, counts=counts)
@@ -371,7 +371,7 @@ async def admin_report_weekly(days: int = 6, current_user: dict = Depends(_requi
 
 @router.get("/admin/reports/punctuality")
 async def admin_report_punctuality(days: int = 7, current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
-    since = (now_ist() - timedelta(days=days)).date().isoformat()
+    since = (get_campus_now() - timedelta(days=days)).date().isoformat()
     on_time = await db.attendance.count_documents({"date": {"$gte": since}, "status": "Present"})
     late = await db.attendance.count_documents({"date": {"$gte": since}, "status": "Late"})
     absent = await db.attendance.count_documents({"date": {"$gte": since}, "status": "Absent"})
@@ -387,7 +387,7 @@ async def admin_report_users_status(current_user: dict = Depends(_require_admin)
 
 @router.get("/admin/reports/faculty", response_model=list[FacultyAttendanceReport])
 async def admin_report_faculty(days: int = 30, current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
-    since = (now_ist() - timedelta(days=days)).date().isoformat()
+    since = (get_campus_now() - timedelta(days=days)).date().isoformat()
     teachers = await db.users.find({"role": "teacher"}).sort("full_name", 1).to_list(length=None)
     attendance_docs = await db.attendance.find({"date": {"$gte": since}}).to_list(length=None)
 
@@ -440,7 +440,7 @@ async def admin_report_monthly_summary(
 
 @router.get("/admin/reports/attendance.csv")
 async def admin_report_csv(days: int = 7, current_user: dict = Depends(_require_admin), db: AsyncIOMotorDatabase = Depends(get_database)):
-    since = (now_ist() - timedelta(days=days)).date().isoformat()
+    since = (get_campus_now() - timedelta(days=days)).date().isoformat()
     records = await db.attendance.find({"date": {"$gte": since}}).sort("date", -1).to_list(length=None)
     output = io.StringIO()
     writer = csv.writer(output)

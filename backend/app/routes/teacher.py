@@ -7,6 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..database.mongo import get_database
 from ..dependencies import get_current_user
+from ..utils.time import get_campus_now
 from ..utils.time import date_key
 from ..models import ROLE_TEACHER
 from ..schemas import TeacherStats, TeacherAttendanceRow, MarkAttendanceRequest, ManualAttendanceRequest, UserOut, ClassSessionCreate, ClassSessionOut, TeacherClassSessionOut, ProfileChangeRequestCreate, ProfileChangeRequestOut
@@ -327,7 +328,7 @@ async def export_teacher_attendance(
     report_date = date_key()
     records = await get_attendance_report_rows(db, report_date, report_date, department)
     
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = get_campus_now().strftime("%Y%m%d_%H%M%S")
     dept_slug = department.lower().replace(" ", "_")
     
     if format == "excel":
@@ -338,7 +339,7 @@ async def export_teacher_attendance(
             headers={"Content-Disposition": f"attachment; filename=attendance_{dept_slug}_{timestamp}.xlsx"}
         )
     else:
-        title = f"Attendance Report - {department} - {datetime.now().strftime('%Y-%m-%d')}"
+        title = f"Attendance Report - {department} - {get_campus_now().strftime('%Y-%m-%d')}"
         file_obj = generate_pdf_report(records, title)
         return StreamingResponse(
             file_obj, 
@@ -364,7 +365,7 @@ async def export_teacher_report(
     if not records:
         raise HTTPException(status_code=404, detail="No attendance records found for the selected range.")
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = get_campus_now().strftime("%Y%m%d_%H%M%S")
     dept_slug = department.lower().replace(" ", "_")
     scope_slug = scope.lower()
     range_slug = f"{from_date}_to_{to_date}"

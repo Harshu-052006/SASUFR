@@ -5,6 +5,7 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from datetime import datetime
+from app.utils.time import get_campus_now
 
 from typing import Any
 
@@ -77,7 +78,7 @@ def generate_pdf_report(records: list[dict | Any], title: str) -> io.BytesIO:
     
     # Add Title
     elements.append(Paragraph(title, title_style))
-    elements.append(Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Paragraph(f"Generated on: {get_campus_now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
     # Prepare Table Data

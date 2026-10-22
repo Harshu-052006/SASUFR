@@ -10,7 +10,7 @@ from jose import jwt
 from passlib.context import CryptContext
 
 from ..config import settings
-from .time import now_ist
+from .time import get_campus_now
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -11,7 +11,7 @@ from ..config import settings
 from ..models import ROLE_STUDENT
 from ..schemas import AttendanceOut, AttendanceStats, MonthlyAttendanceSummary, TeacherAttendanceRow, TeacherStats
 from ..utils.geo import is_within_radius
-from ..utils.time import date_key, iso_ist, now_ist, time_key
+from ..utils.time import date_key, iso_ist, get_campus_now, time_key, iso_utc, IST
 from .email_service import get_last_mail_error, send_absent_notice
 from .face_service import extract_encoding, extract_multiple_encodings, find_best_match, find_matches, verify_liveness_sequence
 
@@ -21,6 +21,17 @@ def serialize_attendance(doc: dict):
         return doc
     doc = dict(doc)
     doc.pop("_id", None)
+    
+    # Dual-format support: if check_in/check_out is an ISO string (UTC), format it back to IST HH:MM:SS
+    for field in ["check_in", "check_out"]:
+        val = doc.get(field)
+        if val and "T" in val:
+            try:
+                dt = datetime.fromisoformat(val).astimezone(IST)
+                doc[field] = dt.strftime("%H:%M:%S")
+            except ValueError:
+                pass
+                
     return doc
 
 
@@ -49,12 +60,12 @@ def _parse_date_value(value: str | None) -> datetime.date | None:
 
 def _attendance_day_completed(today_record_exists: bool) -> bool:
     _ = today_record_exists
-    now = now_ist()
+    now = get_campus_now()
     return (now.hour, now.minute) >= (settings.absent_notice_hour, settings.absent_notice_minute)
 
 
 def _finalized_through_date(today_record_exists: bool) -> datetime.date:
-    today = now_ist().date()
+    today = get_campus_now().date()
     if _attendance_day_completed(today_record_exists):
         return today
     return today - timedelta(days=1)
@@ -79,7 +90,7 @@ def _iter_dates(start_date, end_date):
 
 
 def _month_window_dates(month: str | None = None) -> tuple[datetime.date, datetime.date]:
-    month_value = month or now_ist().strftime("%Y-%m")
+    month_value = month or get_campus_now().strftime("%Y-%m")
     try:
         month_start = datetime.strptime(month_value, "%Y-%m").date()
     except ValueError as exc:
@@ -137,7 +148,7 @@ async def get_attendance_report_rows(
         for doc in attendance_docs
         if doc.get("user_id") is not None and doc.get("date")
     }
-    today = now_ist().date()
+    today = get_campus_now().date()
     today_key = today.isoformat()
     today_record_exists = any(str(doc.get("date")) == today_key for doc in attendance_docs)
     finalized_through_date = min(end_date, _finalized_through_date(today_record_exists))
@@ -214,7 +225,7 @@ async def get_monthly_attendance_summary_rows(
         return []
 
     attendance_docs = await db.attendance.find({"date": {"$gte": month_start.isoformat(), "$lt": next_month.isoformat()}}).to_list(length=None)
-    today = now_ist().date()
+    today = get_campus_now().date()
     today_key = today.isoformat()
     today_record_exists = any(str(doc.get("date")) == today_key for doc in attendance_docs)
     finalized_through_date = min(month_end, _finalized_through_date(today_record_exists))
@@ -311,7 +322,7 @@ async def get_student_attendance_stats(db: AsyncIOMotorDatabase, user_id: int) -
     async for record in cursor:
         history.append(serialize_attendance(record))
 
-    today = now_ist().date()
+    today = get_campus_now().date()
     start_date = _parse_date_value(user.get("created_at")) or today
     today_record_exists = any(str(record.get("date")) == today.isoformat() for record in history)
     through_date = _finalized_through_date(today_record_exists)
@@ -358,7 +369,12 @@ async def get_student_attendance_stats(db: AsyncIOMotorDatabase, user_id: int) -
         if record.get("status") not in {"Present", "Late"}:
             continue
         try:
-            hour, minute, _ = map(int, record["check_in"].split(":"))
+            check_in_val = record.get("check_in", "")
+            if "T" in check_in_val:
+                dt = datetime.fromisoformat(check_in_val).astimezone(IST)
+                hour, minute = dt.hour, dt.minute
+            else:
+                hour, minute, _ = map(int, check_in_val.split(":"))
         except Exception:
             continue
         total_minutes += hour * 60 + minute
@@ -395,7 +411,7 @@ async def get_student_attendance_history(db: AsyncIOMotorDatabase, user_id: int)
 
 
 def _attendance_status_from_time(moment=None) -> str:
-    moment = moment or now_ist()
+    moment = moment or get_campus_now()
     if (moment.hour, moment.minute) > (settings.late_hour, settings.late_minute):
         return "Late"
     return "Present"
@@ -451,7 +467,7 @@ async def _insert_or_update_attendance(
     teacher_name: str | None = None
 ) -> tuple[dict, bool]:
     today = date_key()
-    now = now_ist()
+    now = get_campus_now()
     query = {"user_id": user["id"], "date": today}
     if session_id is not None:
         query["session_id"] = session_id
@@ -466,7 +482,7 @@ async def _insert_or_update_attendance(
                 "id": record_id,
                 "user_id": user["id"],
                 "date": today,
-                "check_in": time_key(now),
+                "check_in": iso_utc(),
                 "status": status,
                 "marked_by_user_id": marked_by_user_id,
                 "method": method,
@@ -476,8 +492,8 @@ async def _insert_or_update_attendance(
                 "subject": subject,
                 "class_name": class_name,
                 "teacher_name": teacher_name,
-                "created_at": iso_ist(),
-                "updated_at": iso_ist(),
+                "created_at": iso_utc(),
+                "updated_at": iso_utc(),
             }
 
             result = await db.attendance.update_one(
@@ -1152,7 +1168,7 @@ async def get_all_attendance_report_data(db: AsyncIOMotorDatabase, date_str: str
     # Get attendance for that day
     attendance = await db.attendance.find({"date": date_str}).to_list(length=None)
     attendance_map = {item["user_id"]: item for item in attendance}
-    today = now_ist().date()
+    today = get_campus_now().date()
     day_finalized = report_date < today or (report_date == today and _attendance_day_completed(bool(attendance)))
     
     report_data = []

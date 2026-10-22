@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
+from app.utils.time import get_campus_now
 from app.database.mongo import get_database
 from app.services.email_service import send_upcoming_lecture_notice
 
@@ -7,7 +8,7 @@ async def upcoming_lecture_worker():
     while True:
         try:
             db = await get_database()
-            now = datetime.now()
+            now = get_campus_now()
             # Look for lectures starting in exactly 15 minutes (give or take a minute)
             target_time = now + timedelta(minutes=15)
             target_time_str = target_time.strftime("%H:%M")
