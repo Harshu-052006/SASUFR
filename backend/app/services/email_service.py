@@ -303,3 +303,17 @@ async def check_mail_health() -> dict:
     return await asyncio.to_thread(check_mail_health_sync)
 
 
+async def send_email_change_otp(email: str, otp: str, user_name: str = "User") -> bool:
+    # High-visibility logging for development/troubleshooting
+    print("\n" + "="*50)
+    print(f" EMAIL CHANGE OTP FOR {email}: {otp} ")
+    print("="*50 + "\n")
+    
+    title = "Verify New Email Address"
+    content = f"Hello {user_name},<br><br>You requested to update your registered email address on the Smart Attendance System Using Face Recognition platform to <b>{email}</b>.<br>Please enter the 6-digit verification code below to authorize this update. This code will expire in 10 minutes."
+    otp_display = f'<div style="background: rgba(0, 209, 199, 0.1); color: #00d1c7; font-size: 2.5rem; font-weight: 900; letter-spacing: 8px; padding: 24px; border-radius: 12px; text-align: center; border: 1px solid rgba(0, 209, 199, 0.2); font-family: monospace; margin: 32px 0;">{otp}</div>'
+    
+    html = _get_premium_template(title, f"{content}{otp_display}")
+    return await send_email(email, f"Smart Attendance System - {title}", f"Your email verification code is: {otp}", html)
+
+

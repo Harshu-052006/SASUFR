@@ -278,16 +278,18 @@ async def resend_otp(db: AsyncIOMotorDatabase, user: dict, otp: str) -> None:
     )
 async def update_user_profile(db: AsyncIOMotorDatabase, user_id: int, payload: UserProfileUpdate) -> dict:
     updates: dict = {}
-    if payload.full_name is not None:
-        updates["full_name"] = payload.full_name
-    if payload.department is not None:
+    if payload.full_name is not None and payload.full_name.strip():
+        updates["full_name"] = payload.full_name.strip()
+    if payload.phone is not None:
+        updates["phone"] = payload.phone.strip()
+    if payload.department is not None and payload.department.strip():
         updates["department"] = payload.department.strip()
+    if payload.class_year is not None and payload.class_year.strip():
+        updates["class_year"] = payload.class_year.strip()
     
     if payload.preferences is not None:
-        # Load existing user and merge preferences to prevent data loss
         user = await db.users.find_one({"id": int(user_id)})
-        current_prefs = user.get("preferences", {})
-        # Deep merge/Update with new preferences
+        current_prefs = user.get("preferences", {}) if user else {}
         current_prefs.update(payload.preferences)
         updates["preferences"] = current_prefs
 
@@ -296,4 +298,5 @@ async def update_user_profile(db: AsyncIOMotorDatabase, user_id: int, payload: U
     
     updates["updated_at"] = iso_ist()
     await db.users.update_one({"id": int(user_id)}, {"$set": updates})
-    return updates
+    updated_user = await db.users.find_one({"id": int(user_id)})
+    return serialize_user(updated_user) if updated_user else updates

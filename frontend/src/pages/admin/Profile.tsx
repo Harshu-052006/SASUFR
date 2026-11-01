@@ -3,13 +3,15 @@ import { DashboardLayout } from "../../layouts/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-import { Save } from "lucide-react";
+import { Save, UserCog, CheckCircle2 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
+import { EditProfileModal } from "../../components/EditProfileModal";
 
 export function Profile() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
   
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -58,9 +60,20 @@ export function Profile() {
     <DashboardLayout title="My Profile">
       <div className="max-w-4xl mx-auto space-y-6">
         <Card className="border-border shadow-sm">
-          <CardHeader>
-            <CardTitle>Profile Details</CardTitle>
-            <CardDescription>Your personal information.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div>
+              <CardTitle>Profile Details</CardTitle>
+              <CardDescription>Your personal administrator credentials and contact details.</CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowEditModal(true)}
+              className="gap-1.5 text-xs font-semibold shadow-xs hover:border-primary/50"
+            >
+              <UserCog className="w-3.5 h-3.5 text-primary" />
+              Edit Profile & Email
+            </Button>
           </CardHeader>
           <CardContent className="space-y-6">
             {loading ? (
@@ -71,26 +84,42 @@ export function Profile() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium leading-none">Full Name</label>
-                  <Input type="text" value={profile.full_name || ""} disabled />
+                  <Input type="text" value={profile.full_name || ""} disabled className="bg-slate-50 dark:bg-slate-900" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none">Email Address</label>
-                  <Input type="email" value={profile.email || ""} disabled />
+                  <label className="text-sm font-medium leading-none flex items-center gap-2">
+                    Email Address
+                    <span className="inline-flex items-center gap-1 text-[0.65rem] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.2 rounded-full border border-emerald-200 dark:border-emerald-800">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Verified
+                    </span>
+                  </label>
+                  <Input type="email" value={profile.email || ""} disabled className="bg-slate-50 dark:bg-slate-900" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium leading-none">Role</label>
-                  <Input type="text" value={(profile.role || "Admin").toUpperCase()} disabled />
+                  <Input type="text" value={(profile.role || "Admin").toUpperCase()} disabled className="bg-slate-50 dark:bg-slate-900" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none">Contact Phone</label>
+                  <Input type="text" value={profile.phone || "Not set"} disabled className="bg-slate-50 dark:bg-slate-900" />
                 </div>
                 {profile.department && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium leading-none">Department</label>
-                    <Input type="text" value={profile.department} disabled />
+                    <Input type="text" value={profile.department} disabled className="bg-slate-50 dark:bg-slate-900" />
                   </div>
                 )}
               </div>
             ) : null}
           </CardContent>
         </Card>
+
+        <EditProfileModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onUserUpdated={(updated) => setProfile(updated)}
+        />
 
         <Card className="border-border shadow-sm">
           <CardHeader>

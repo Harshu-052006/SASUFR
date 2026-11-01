@@ -389,9 +389,18 @@ class AdminConfigUpdate(BaseModel):
 
 class UserProfileUpdate(BaseModel):
     full_name: str | None = None
+    phone: str | None = None
     department: str | None = None
     class_year: str | None = None
     preferences: dict | None = None
+
+
+class EmailChangeRequest(BaseModel):
+    new_email: EmailStr
+
+
+class EmailChangeVerifyRequest(BaseModel):
+    otp: str = Field(min_length=6, max_length=6)
 
 
 class ForgotPasswordRequest(BaseModel):

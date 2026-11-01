@@ -8,10 +8,31 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from ..limiter import limiter
 from ..database.mongo import get_database
 from ..dependencies import get_current_user
-from ..models import ROLE_ADMIN, ROLE_STUDENT, ROLE_TEACHER
-from ..schemas import ChangePasswordRequest, LoginRequest, OTPRequest, OTPVerifyRequest, Token, UserCreate, UserOut, UserProfileUpdate, ForgotPasswordRequest, ResetPasswordRequest, LivenessChallengeResponse, SetNewPasswordRequest
+from ..schemas import (
+    ChangePasswordRequest, 
+    LoginRequest, 
+    OTPRequest, 
+    OTPVerifyRequest, 
+    Token, 
+    UserCreate, 
+    UserOut, 
+    UserProfileUpdate, 
+    ForgotPasswordRequest, 
+    ResetPasswordRequest, 
+    LivenessChallengeResponse, 
+    SetNewPasswordRequest,
+    EmailChangeRequest,
+    EmailChangeVerifyRequest
+)
 from ..services.attendance_service import serialize_attendance
-from ..services.email_service import get_last_mail_error, send_password_changed, send_registration_success, send_otp_email, send_password_reset_otp_email
+from ..services.email_service import (
+    get_last_mail_error, 
+    send_password_changed, 
+    send_registration_success, 
+    send_otp_email, 
+    send_password_reset_otp_email,
+    send_email_change_otp
+)
 from ..services.face_service import extract_encoding, find_best_match, verify_liveness_sequence, generate_liveness_challenge_sequence
 from ..services.security_service import log_security_event
 from ..services.user_service import (
@@ -408,8 +429,178 @@ async def update_current_user_profile(
     db: AsyncIOMotorDatabase = Depends(get_database),
     current_user: dict = Depends(get_current_user),
 ):
-    await update_user_profile(db, current_user.get("id"), payload)
-    return {"message": "Profile updated successfully"}
+    updated = await update_user_profile(db, current_user.get("id"), payload)
+    return {"message": "Profile updated successfully", "user": updated}
+
+
+@router.get("/system/domain")
+async def get_system_domain(db: AsyncIOMotorDatabase = Depends(get_database)):
+    config_doc = await db.config.find_one({"_id": "global"})
+    raw_domain = config_doc.get("official_domain") if config_doc else None
+    domain = raw_domain.strip().lower().lstrip("@") if raw_domain and isinstance(raw_domain, str) and raw_domain.strip() else "mit.asia"
+    return {"official_domain": domain}
+
+
+@router.post("/users/me/email-change/request")
+async def request_email_change(
+    payload: EmailChangeRequest,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: dict = Depends(get_current_user),
+):
+    new_email = payload.new_email.strip().lower()
+    current_email = (current_user.get("email") or "").strip().lower()
+
+    if new_email == current_email:
+        raise HTTPException(status_code=400, detail="New email cannot be the same as your current email.")
+
+    # 1. Strictly enforce official institutional domain
+    config_doc = await db.config.find_one({"_id": "global"})
+    raw_domain = config_doc.get("official_domain") if config_doc else None
+    official_domain = raw_domain.strip().lower().lstrip("@") if raw_domain and isinstance(raw_domain, str) and raw_domain.strip() else "mit.asia"
+    
+    if not new_email.endswith(f"@{official_domain}"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Email must belong to the official institutional domain (@{official_domain})."
+        )
+
+    # 2. Check uniqueness across all users
+    existing_user = await db.users.find_one({"email": new_email, "id": {"$ne": current_user["id"]}})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="This email address is already registered to another account.")
+
+    # 3. Generate 6-digit OTP with 10 min expiry
+    otp = generate_otp()
+    expires_at = (get_campus_now() + timedelta(minutes=10)).isoformat()
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "pending_email": new_email,
+            "pending_email_otp_hash": otp_hash(otp, otp_salt()),
+            "pending_email_otp_expires_at": expires_at,
+            "updated_at": iso_ist()
+        }}
+    )
+
+    otp_sent = await send_email_change_otp(new_email, otp, current_user.get("full_name", "User"))
+    if not otp_sent:
+        mail_error = get_last_mail_error()
+        if mail_error == "quota_exceeded":
+            raise HTTPException(
+                status_code=503,
+                detail="Email sending quota exceeded. Please contact your system administrator.",
+            )
+
+    await log_security_event(
+        db,
+        event_type="EMAIL_CHANGE_REQUESTED",
+        severity="info",
+        details=f"Email change initiated for user ID {current_user['id']} to {new_email}",
+        user_id=current_user["id"],
+        metadata={"current_email": current_email, "requested_email": new_email},
+        ip_address=(request.client.host if request and request.client else None),
+        user_agent=(request.headers.get("user-agent") if request else None),
+    )
+
+    return {
+        "message": f"Verification code sent to {new_email}. Please enter the 6-digit code to complete the update.",
+        "pending_email": new_email
+    }
+
+
+@router.post("/users/me/email-change/verify")
+async def verify_email_change(
+    payload: EmailChangeVerifyRequest,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: dict = Depends(get_current_user),
+):
+    user = await db.users.find_one({"id": current_user["id"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    pending_email = user.get("pending_email")
+    pending_hash = user.get("pending_email_otp_hash")
+    pending_expires = user.get("pending_email_otp_expires_at")
+
+    if not pending_email or not pending_hash or not pending_expires:
+        raise HTTPException(status_code=400, detail="No pending email change request found.")
+
+    try:
+        expires_dt = datetime.fromisoformat(pending_expires)
+        if get_campus_now() > expires_dt:
+            raise HTTPException(status_code=400, detail="Verification code has expired. Please request a new code.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    if pending_hash != otp_hash(payload.otp.strip(), otp_salt()):
+        raise HTTPException(status_code=400, detail="Invalid verification code.")
+
+    # Re-verify collision before saving
+    conflict = await db.users.find_one({"email": pending_email, "id": {"$ne": user["id"]}})
+    if conflict:
+        raise HTTPException(status_code=400, detail="This email address is already taken by another account.")
+
+    old_email = user.get("email")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {
+                "email": pending_email,
+                "updated_at": iso_ist()
+            },
+            "$unset": {
+                "pending_email": "",
+                "pending_email_otp_hash": "",
+                "pending_email_otp_expires_at": ""
+            }
+        }
+    )
+
+    await log_security_event(
+        db,
+        event_type="EMAIL_CHANGED",
+        severity="warning",
+        details=f"Email successfully updated for user {user['id']} from {old_email} to {pending_email}",
+        user_id=user["id"],
+        metadata={"old_email": old_email, "new_email": pending_email},
+        ip_address=(request.client.host if request and request.client else None),
+        user_agent=(request.headers.get("user-agent") if request else None),
+    )
+
+    return {
+        "message": f"Email address successfully updated to {pending_email}.",
+        "email": pending_email
+    }
+
+
+@router.post("/users/me/email-change/resend")
+async def resend_email_change_otp_endpoint(
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: dict = Depends(get_current_user),
+):
+    user = await db.users.find_one({"id": current_user["id"]})
+    pending_email = user.get("pending_email")
+    if not pending_email:
+        raise HTTPException(status_code=400, detail="No pending email change request found.")
+
+    otp = generate_otp()
+    expires_at = (get_campus_now() + timedelta(minutes=10)).isoformat()
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "pending_email_otp_hash": otp_hash(otp, otp_salt()),
+            "pending_email_otp_expires_at": expires_at,
+            "updated_at": iso_ist()
+        }}
+    )
+
+    await send_email_change_otp(pending_email, otp, user.get("full_name", "User"))
+    return {"message": f"A new verification code has been dispatched to {pending_email}."}
 
 
 @router.post("/forgot-password")

@@ -58,7 +58,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <header className="h-16 flex items-center px-8 justify-between bg-white/80 dark:bg-[#111726]/80 border-b border-slate-200 dark:border-border/60 z-40 sticky top-0 backdrop-blur-md shadow-sm">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{title}</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -75,15 +75,18 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel className="flex flex-col gap-0.5">
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">{user?.full_name || "My Account"}</span>
+                  <span className="text-[0.7rem] font-normal text-muted-foreground truncate">{user?.email}</span>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {user?.role && (
                   <>
                     <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link to={`/${user.role}/profile`}>Profile</Link>
+                      <Link to={`/${user.role}/profile`}>Profile Overview</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link to={`/${user.role}/settings`}>Settings</Link>
+                      <Link to={`/${user.role}/settings`}>Account Settings</Link>
                     </DropdownMenuItem>
                   </>
                 )}
