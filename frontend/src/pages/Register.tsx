@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { apiFetch } from "../lib/api";
 import { 
   Loader2, ArrowRight, Camera, ArrowLeft, 
-  CheckCircle, AlertCircle, Shield, RefreshCw
+  CheckCircle, AlertCircle, Shield, RefreshCw, Eye, EyeOff
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +21,8 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [needsVerification, setNeedsVerification] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -461,11 +463,55 @@ export function Register() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">PASSWORD</label>
-                <Input name="password" type="password" required placeholder="Min 6 characters" value={formData.password} onChange={handleChange} className="h-11 bg-background" />
+                <div className="relative">
+                  <Input 
+                    name="password" 
+                    type={showPassword ? "text" : "password"} 
+                    required 
+                    placeholder="Min 6 characters" 
+                    value={formData.password} 
+                    onChange={handleChange} 
+                    className="h-11 bg-background pr-10" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none text-muted-foreground uppercase tracking-[0.1em]">CONFIRM PASSWORD</label>
-                <Input name="confirm_password" type="password" required placeholder="Confirm password" value={formData.confirm_password} onChange={handleChange} className="h-11 bg-background" />
+                <div className="relative">
+                  <Input 
+                    name="confirm_password" 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    required 
+                    placeholder="Confirm password" 
+                    value={formData.confirm_password} 
+                    onChange={handleChange} 
+                    className="h-11 bg-background pr-10" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md focus:outline-none"
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
