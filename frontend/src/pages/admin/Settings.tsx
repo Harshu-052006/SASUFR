@@ -129,15 +129,51 @@ export function Settings() {
                   </div>
 
                   <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-lg font-medium leading-none">Security Features</h3>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="mfa" name="mfa_enabled" checked={config.mfa_enabled || false} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
-                        <label htmlFor="mfa" className="text-sm font-medium leading-none">Enable MFA</label>
+                    <div>
+                      <h3 className="text-lg font-medium leading-none">Security & Access Controls</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Disable Geofencing during development to mark attendance from anywhere without location errors.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border bg-slate-50 dark:bg-slate-900/40">
+                        <input 
+                          type="checkbox" 
+                          id="geofencing" 
+                          name="geofencing_enabled" 
+                          checked={config.geofencing_enabled || false} 
+                          onChange={handleChange} 
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
+                        />
+                        <label htmlFor="geofencing" className="text-sm font-medium leading-none cursor-pointer">
+                          Campus Geofencing
+                        </label>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="lockout" name="lockout_enabled" checked={config.lockout_enabled || false} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
-                        <label htmlFor="lockout" className="text-sm font-medium leading-none">Enable Lockout</label>
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border bg-slate-50 dark:bg-slate-900/40">
+                        <input 
+                          type="checkbox" 
+                          id="mfa" 
+                          name="mfa_enabled" 
+                          checked={config.mfa_enabled || false} 
+                          onChange={handleChange} 
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
+                        />
+                        <label htmlFor="mfa" className="text-sm font-medium leading-none cursor-pointer">
+                          Enable MFA
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border bg-slate-50 dark:bg-slate-900/40">
+                        <input 
+                          type="checkbox" 
+                          id="lockout" 
+                          name="lockout_enabled" 
+                          checked={config.lockout_enabled || false} 
+                          onChange={handleChange} 
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
+                        />
+                        <label htmlFor="lockout" className="text-sm font-medium leading-none cursor-pointer">
+                          Account Lockout
+                        </label>
                       </div>
                     </div>
                   </div>

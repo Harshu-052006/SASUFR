@@ -77,6 +77,7 @@ function App() {
           <Route path="/teacher/mark-attendance" element={<TeacherMarkAttendance />} />
           <Route path="/teacher/students" element={<TeacherStudents />} />
           <Route path="/teacher/attendance" element={<TeacherViewAttendance />} />
+          <Route path="/teacher/view-attendance" element={<TeacherViewAttendance />} />
           <Route path="/teacher/reports" element={<TeacherReports />} />
           <Route path="/teacher/profile" element={<TeacherProfile />} />
           <Route path="/teacher/settings" element={<TeacherSettings />} />

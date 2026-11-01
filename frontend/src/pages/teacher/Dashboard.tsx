@@ -70,12 +70,16 @@ export function Dashboard() {
     try {
       await apiFetch("/teacher/sessions/start", {
         method: "POST",
-        body: JSON.stringify(sessionForm)
+        body: JSON.stringify({
+          subject: sessionForm.subject,
+          room_id: sessionForm.room_id,
+          class_name: sessionForm.room_id || "Classroom"
+        })
       });
       setIsSessionModalOpen(false);
       setSessionForm({ subject: "", room_id: "" });
       toast.success("Live session started successfully");
-      fetchData();
+      await fetchData();
     } catch (err: any) {
       toast.error(err.message || "Failed to start session");
     } finally {
@@ -141,13 +145,18 @@ export function Dashboard() {
             <p className="text-slate-500 text-sm">Activate geofenced biometric marking for your lecture hall or classroom.</p>
           </div>
           {activeSession ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 dark:text-indigo-300 px-4 py-2 rounded-lg font-semibold border border-indigo-100 dark:border-indigo-800">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2.5 text-indigo-700 bg-indigo-50 dark:bg-indigo-950/50 dark:text-indigo-300 px-4 py-2 rounded-lg font-semibold border border-indigo-200 dark:border-indigo-800">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
                 </span>
-                Active: {activeSession.subject} ({activeSession.room_id})
+                <span>Active: <strong>{activeSession.subject}</strong> ({activeSession.class_name || activeSession.room_id || "Classroom"})</span>
+                {activeSession.room_code && (
+                  <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded font-mono font-bold tracking-wider ml-1">
+                    PIN: {activeSession.room_code}
+                  </span>
+                )}
               </div>
               <Button variant="destructive" onClick={handleEndSession}>End Session</Button>
             </div>

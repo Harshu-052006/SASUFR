@@ -7,7 +7,7 @@ async def main():
     db = client.smart_attendance
     doc = await db.config.find_one({"_id": "global"})
     print(f"Global Config: {doc}")
-    await db.config.update_one({"_id": "global"}, {"$set": {"official_domain": "mit.asia"}}, upsert=True)
+    await db.config.update_one({"_id": "global"}, {"$set": {"geofencing_enabled": False}}, upsert=True)
     doc = await db.config.find_one({"_id": "global"})
     print(f"Updated Global Config: {doc}")
 

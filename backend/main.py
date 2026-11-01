@@ -230,6 +230,7 @@ async def root():
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health():
     face_status = get_face_recognition_status()
     from app.services.email_service import check_mail_health

@@ -1,4 +1,4 @@
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : '')).replace(/\/$/, '');
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -32,7 +32,13 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     try {
       const errorData = await response.json();
       rawDetail = errorData.detail;
-      errorMessage = typeof errorData.detail === 'string' ? errorData.detail : (errorData.message || errorMessage);
+      if (Array.isArray(errorData.detail)) {
+        errorMessage = errorData.detail.map((d: any) => d.msg || (typeof d === "string" ? d : JSON.stringify(d))).join(", ");
+      } else if (typeof errorData.detail === 'string') {
+        errorMessage = errorData.detail;
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      }
     } catch {
       // Not JSON
     }

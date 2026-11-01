@@ -549,16 +549,15 @@ async def start_class_session(
     lecture_start_time: str,
     lecture_end_time: str
 ) -> dict:
-    existing_session = await db.class_sessions.find_one({
-        "teacher_id": teacher["id"],
-        "department": department,
-        "class_name": class_name,
-        "batch_id": batch_id,
-        "course_id": course_id,
-        "status": "active"
-    })
-    if existing_session:
-        raise HTTPException(status_code=409, detail="An active session for this class is already running.")
+    # Automatically archive any previous active sessions for this teacher to prevent conflicts
+    await db.class_sessions.update_many(
+        {"teacher_id": teacher["id"], "status": "active"},
+        {"$set": {"status": "ended", "end_time": iso_ist()}}
+    )
+    await db.session_logs.update_many(
+        {"teacher_id": teacher["id"], "status": "ONGOING"},
+        {"$set": {"status": "COMPLETED", "actual_end_time": iso_ist()}}
+    )
 
     import secrets
     room_code = str(secrets.randbelow(1000000)).zfill(6)
@@ -617,18 +616,30 @@ async def get_active_class_sessions(
     department: str,
     enrolled_subjects: list[str] | None = None
 ) -> list[dict]:
+    import re
+    # Flexibly match department name ignoring case and optional trailing 's'
+    dept_base = re.escape((department or "").strip().rstrip("s"))
+    dept_regex = re.compile(rf"^{dept_base}s?$", re.IGNORECASE)
+
     # 1. Fetch V1 (class_sessions)
-    query_v1 = {"department": department, "status": "active"}
-    if enrolled_subjects is not None and len(enrolled_subjects) > 0:
-        query_v1["subject"] = {"$in": enrolled_subjects}
-        
+    query_v1 = {"department": {"$regex": dept_regex}, "status": "active"}
     sessions = []
     async for doc in db.class_sessions.find(query_v1):
+        subj = (doc.get("subject") or "").strip()
+        if enrolled_subjects and len(enrolled_subjects) > 0:
+            matched = any(
+                code.lower() == subj.lower() or 
+                code.lower() in subj.lower() or 
+                subj.lower() in code.lower()
+                for code in enrolled_subjects
+            )
+            if not matched:
+                continue
         sessions.append(serialize_attendance(doc))
 
     # 2. Fetch Teachers in this department (needed to filter V2 sessions)
     department_teachers = await db.users.find(
-        {"department": department, "role": "teacher"}
+        {"department": {"$regex": dept_regex}, "role": "teacher"}
     ).to_list(length=None)
     
     if not department_teachers:
@@ -639,10 +650,18 @@ async def get_active_class_sessions(
 
     # 3. Fetch V2 (session_logs)
     query_v2 = {"status": "ONGOING", "teacher_id": {"$in": teacher_ids}}
-    if enrolled_subjects is not None and len(enrolled_subjects) > 0:
-        query_v2["subject"] = {"$in": enrolled_subjects}
-        
     async for doc in db.session_logs.find(query_v2):
+        subj = (doc.get("subject") or "").strip()
+        if enrolled_subjects and len(enrolled_subjects) > 0:
+            matched = any(
+                code.lower() == subj.lower() or 
+                code.lower() in subj.lower() or 
+                subj.lower() in code.lower()
+                for code in enrolled_subjects
+            )
+            if not matched:
+                continue
+
         teacher_id = doc["teacher_id"]
         # Normalize V2 schema into V1 ClassSessionOut shape
         normalized = {
@@ -702,7 +721,9 @@ async def mark_student_self_attendance(
     if not is_v2:
         if session.get("status") != "active":
             raise HTTPException(status_code=400, detail="This class session is no longer active")
-        if student.get("department") != session.get("department"):
+        dept_student = (student.get("department") or "").strip().rstrip("s").lower()
+        dept_session = (session.get("department") or "").strip().rstrip("s").lower()
+        if dept_student != dept_session:
             raise HTTPException(status_code=403, detail="You do not belong to this department's class")
         
         # Verify student belongs to target group for V1 if specified
@@ -770,9 +791,17 @@ async def mark_student_self_attendance(
         raise HTTPException(status_code=400, detail="No faces detected in the image")
         
     # Match against the single student logging in
-    matches = await find_matches(candidates, [student])
-    if not matches:
-        raise HTTPException(status_code=403, detail="Face does not match your registered identity")
+    has_registered_face = bool(student.get("face_encoding"))
+    if not has_registered_face:
+        # First-time enrollment: enroll this face to the student's profile
+        from .crypto import encrypt_encoding
+        enc_to_save = encrypt_encoding(candidates[0])
+        await db.users.update_one({"id": student["id"]}, {"$set": {"face_encoding": enc_to_save}})
+        student["face_encoding"] = enc_to_save
+    else:
+        matches = await find_matches(candidates, [student])
+        if not matches:
+            raise HTTPException(status_code=403, detail="Face does not match your registered identity")
 
     status = _attendance_status_from_time(session=session)
     
@@ -881,10 +910,7 @@ async def mark_attendance_manual(db: AsyncIOMotorDatabase, *, teacher: dict, stu
 
     geo_policy = await _get_geo_policy(db)
     distance = None
-    if geo_policy.get("geofencing_enabled"):
-        if latitude is None or longitude is None:
-            raise HTTPException(status_code=400, detail="Location access is required while campus geofencing is enabled.")
-
+    if geo_policy.get("geofencing_enabled") and latitude is not None and longitude is not None:
         allowed, distance = is_within_radius(
             latitude,
             longitude,
@@ -895,10 +921,15 @@ async def mark_attendance_manual(db: AsyncIOMotorDatabase, *, teacher: dict, stu
         if not allowed:
             raise HTTPException(status_code=400, detail=f"Attendance can only be marked within {float(geo_policy['max_distance_km']):g} km of campus")
 
-    saved, was_created = await _insert_or_update_attendance(db, user=student, marked_by_user_id=teacher["id"], status=status.title(), method="manual", latitude=latitude, longitude=longitude)
-    
-    if not was_created:
-        raise HTTPException(status_code=400, detail="Attendance already marked for this student today.")
+    existing = await db.attendance.find_one({"user_id": student["id"], "date": date_key()})
+    if existing:
+        await db.attendance.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {"status": status.title(), "marked_by_user_id": teacher["id"], "method": "manual", "updated_at": iso_utc()}}
+        )
+        saved = await db.attendance.find_one({"_id": existing["_id"]})
+    else:
+        saved, _ = await _insert_or_update_attendance(db, user=student, marked_by_user_id=teacher["id"], status=status.title(), method="manual", latitude=latitude, longitude=longitude)
 
     return {
         "message": "Attendance marked successfully",

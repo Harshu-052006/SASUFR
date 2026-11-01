@@ -27,13 +27,21 @@ def get_face_recognition_status() -> dict[str, bool | str | None]:
 
 
 def _decode_image(image_data: str):
+    if not image_data or image_data.strip() in ("", "data:,"):
+        raise HTTPException(status_code=400, detail="No valid image captured from camera. Please wait for camera preview to initialize.")
     if "," in image_data:
         image_data = image_data.split(",", 1)[1]
     try:
         raw = base64.b64decode(image_data)
+        if not raw or len(raw) < 100:
+            raise ValueError("Image data is too small or empty")
     except Exception as exc:
         raise HTTPException(status_code=400, detail="Invalid image data") from exc
-    return face_recognition.load_image_file(io.BytesIO(raw))
+
+    try:
+        return face_recognition.load_image_file(io.BytesIO(raw))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Cannot identify image format. Ensure camera video feed is active and lens is unobstructed.") from exc
 
 _ACTIVE_LIVENESS_SESSIONS: dict[str, list[str]] = {}
 

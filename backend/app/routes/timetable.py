@@ -121,29 +121,35 @@ async def get_weekly_timetable(current_user: dict = Depends(get_current_user), d
 @router.get("/timetable/active-sessions")
 async def get_active_sessions(current_user: dict = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_database)):
     """Returns any ONGOING sessions that apply to the logged-in student."""
-    role = current_user.get("role", "").lower()
-    
-    if role != "student" or not current_user.get("course_id"):
+    role = (current_user.get("role") or "").lower()
+    if role != "student":
         return []
-        
-    # Get today's resolved schedule for the student
-    now = get_campus_now()
-    day_name = now.strftime("%A")
-    todays_slots = await _resolve_v2_schedule_for_student(db, current_user, day_name)
-    slot_ids = [slot["id"] for slot in todays_slots]
+
+    department = current_user.get("department")
+    enrolled_subjects = current_user.get("enrolled_subjects", [])
     
-    if not slot_ids:
-        return []
-        
-    # Find active sessions for those exact slots
-    cursor = db.session_logs.find({
-        "timetable_slot_id": {"$in": slot_ids},
-        "status": "ONGOING"
-    })
-    
+    from ..services.attendance_service import get_active_class_sessions
     active_sessions = []
-    async for session in cursor:
-        session["id"] = session.pop("_id", session.get("id"))
-        active_sessions.append(session)
+    if department:
+        active_sessions = await get_active_class_sessions(db, department, enrolled_subjects=enrolled_subjects)
+
+    if current_user.get("course_id"):
+        # Get today's resolved schedule for the student
+        now = get_campus_now()
+        day_name = now.strftime("%A")
+        todays_slots = await _resolve_v2_schedule_for_student(db, current_user, day_name)
+        slot_ids = [slot["id"] for slot in todays_slots]
+        
+        if slot_ids:
+            cursor = db.session_logs.find({
+                "timetable_slot_id": {"$in": slot_ids},
+                "status": "ONGOING"
+            })
+            existing_ids = {str(s.get("id")) for s in active_sessions}
+            async for session in cursor:
+                s_id = str(session.pop("_id", session.get("id")))
+                if s_id not in existing_ids:
+                    session["id"] = s_id
+                    active_sessions.append(session)
         
     return active_sessions

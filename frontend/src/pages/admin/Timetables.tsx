@@ -80,12 +80,10 @@ export function Timetables() {
 
     setSaving(true);
     try {
-      const resp = await fetch("http://127.0.0.1:8000/admin/timetables/import", {
+      await apiFetch("/admin/timetables/import", {
         method: "POST",
         body: formData,
-        // credentials: "include" - depending on setup
       });
-      if (!resp.ok) throw new Error("Failed to upload file");
       toast.success("Timetables imported successfully")
       setIsUploadModalOpen(false);
       fetchData();

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -204,20 +204,57 @@ async def start_session(
     current_user: dict = Depends(_require_teacher),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
-    if not current_user.get("department"):
+    department = payload.department or current_user.get("department")
+    if not department:
         raise HTTPException(status_code=400, detail="Faculty department not configured.")
-    return await start_class_session(
+
+    start_time_str = payload.lecture_start_time or get_campus_now().strftime("%H:%M")
+    end_time_str = payload.lecture_end_time or (get_campus_now() + timedelta(hours=1)).strftime("%H:%M")
+    class_name_str = payload.class_name or payload.room_id or "General"
+
+    res = await start_class_session(
         db, 
         teacher=current_user, 
         subject=payload.subject, 
-        class_name=payload.class_name, 
-        department=payload.department,
+        class_name=class_name_str, 
+        department=department,
         course_id=payload.course_id,
         academic_year=payload.academic_year,
         batch_id=payload.batch_id,
-        lecture_start_time=payload.lecture_start_time,
-        lecture_end_time=payload.lecture_end_time
+        lecture_start_time=start_time_str,
+        lecture_end_time=end_time_str
     )
+    if payload.room_id:
+        res["room_id"] = payload.room_id
+    return res
+
+
+@router.post("/teacher/sessions/{session_id}/end")
+async def end_session(
+    session_id: str,
+    current_user: dict = Depends(_require_teacher),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    from app.utils.time import iso_ist
+    s_id: Any = int(session_id) if session_id.isdigit() else session_id
+
+    # 1. Update V1 class_sessions
+    res1 = await db.class_sessions.update_one(
+        {"id": s_id, "teacher_id": current_user["id"], "status": "active"},
+        {"$set": {"status": "ended", "end_time": iso_ist()}}
+    )
+    if res1.modified_count > 0:
+        return {"message": "Session ended successfully"}
+
+    # 2. Update V2 session_logs
+    res2 = await db.session_logs.update_one(
+        {"id": str(session_id), "teacher_id": current_user["id"], "status": "ONGOING"},
+        {"$set": {"status": "COMPLETED", "actual_end_time": iso_ist()}}
+    )
+    if res2.modified_count > 0:
+        return {"message": "Session ended successfully"}
+
+    return {"message": "Session ended or already inactive"}
 
 
 @router.get("/teacher/sessions/active", response_model=list[TeacherClassSessionOut])

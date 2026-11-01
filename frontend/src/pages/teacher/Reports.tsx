@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Loader2, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "../../lib/api";
 
 export function Reports() {
   const [startDate, setStartDate] = useState("");
@@ -31,7 +32,7 @@ export function Reports() {
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const response = await fetch(`/teacher/reports/export?start_date=${startDate}&end_date=${endDate}&format=${format}`, {
+      const response = await fetch(`${API_BASE_URL}/teacher/reports/export?start_date=${startDate}&end_date=${endDate}&format=${format}`, {
         headers,
         credentials: "include"
       });

@@ -152,13 +152,14 @@ class MarkAttendanceRequest(BaseModel):
 
 class ClassSessionCreate(BaseModel):
     subject: str
-    class_name: str
-    department: str
+    class_name: str | None = None
+    department: str | None = None
+    room_id: str | None = None
     course_id: str | None = None
     academic_year: str | None = None
     batch_id: str | None = None
-    lecture_start_time: str
-    lecture_end_time: str
+    lecture_start_time: str | None = None
+    lecture_end_time: str | None = None
 
 
 class ClassSessionOut(BaseModel):
@@ -166,27 +167,29 @@ class ClassSessionOut(BaseModel):
 
     id: int | str
     subject: str
-    class_name: str
-    department: str
+    class_name: str | None = None
+    department: str | None = None
+    room_id: str | None = None
     course_id: str | None = None
     academic_year: str | None = None
     batch_id: str | None = None
-    teacher_id: int
-    teacher_name: str
-    status: str
-    start_time: str
+    teacher_id: int | str | None = None
+    teacher_name: str | None = None
+    status: str | None = "active"
+    start_time: str | None = None
     end_time: str | None = None
     lecture_start_time: str | None = None
     lecture_end_time: str | None = None
     created_at: str | None = None
+    room_code: str | None = None
 
 class TeacherClassSessionOut(ClassSessionOut):
-    room_code: str | None = None
+    pass
 
 
 class StudentSelfAttendanceRequest(BaseModel):
     session_id: str | int
-    room_code: str
+    room_code: str | None = ""
     image: str
     latitude: float | None = None
     longitude: float | None = None
