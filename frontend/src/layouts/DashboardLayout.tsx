@@ -50,14 +50,14 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-muted/20 text-foreground flex overflow-hidden">
+    <div className="min-h-screen bg-slate-50/80 dark:bg-[#0B0F17] text-foreground flex overflow-hidden">
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} role={user?.role} />
       
       {/* Main Content Area */}
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-        <header className="h-16 flex items-center px-8 justify-between bg-background border-b z-40 sticky top-0 shadow-sm">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+        <header className="h-16 flex items-center px-8 justify-between bg-white/80 dark:bg-[#111726]/80 border-b border-slate-200 dark:border-border/60 z-40 sticky top-0 backdrop-blur-md shadow-sm">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{title}</h1>
           <div className="flex items-center gap-4">
             
             <DropdownMenu>

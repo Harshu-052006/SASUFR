@@ -102,9 +102,9 @@ async def register(
                     user_agent=(request.headers.get("user-agent") if request else None),
                 )
                 raise HTTPException(status_code=400, detail=f"Student roll number not on whitelist and email does not match official organization domain (@{official_domain}).")
-    elif requested_role == "teacher":
+    elif requested_role in ("teacher", "hod"):
         if not payload.id_card_image:
-            raise HTTPException(status_code=400, detail="ID card image is required for faculty registration.")
+            raise HTTPException(status_code=400, detail="ID card image is required for faculty/HOD registration.")
         is_active = False
         approval_status = "pending"
     else:
@@ -118,6 +118,22 @@ async def register(
 
     if not payload.department or not payload.department.strip():
         raise HTTPException(status_code=400, detail="Department is required")
+
+    # Enforce exactly ONE HOD per department
+    if requested_role == "hod" or (payload.designation and payload.designation.strip().lower() == "hod"):
+        from app.routes.hod import _get_dept_regex
+        dept_regex = _get_dept_regex(payload.department)
+        existing_hod = await db.users.find_one({
+            "role": "hod",
+            "department": {"$regex": dept_regex},
+            "is_active": True
+        })
+        if existing_hod:
+            hod_name = existing_hod.get("full_name") or existing_hod.get("email")
+            raise HTTPException(
+                status_code=400,
+                detail=f"The '{payload.department}' department already has an assigned Head of Department ({hod_name}). A department can have only one HOD."
+            )
 
     if payload.liveness_session_id and payload.liveness_frames:
         await verify_liveness_sequence(payload.liveness_session_id, payload.liveness_frames)

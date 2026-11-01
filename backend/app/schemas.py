@@ -614,3 +614,14 @@ class AnnouncementOut(BaseModel):
     created_by: int | str | None = None
     created_at: str
     expires_at: str
+
+
+class DepartmentCreateWithHOD(BaseModel):
+    department_name: str
+    department_code: str | None = None
+    create_new_hod: bool = True
+    hod_full_name: str | None = None
+    hod_email: EmailStr | None = None
+    hod_roll_number: str | None = None
+    hod_password: str | None = None
+    promote_user_id: int | None = None

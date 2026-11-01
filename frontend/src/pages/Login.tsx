@@ -32,6 +32,7 @@ export function Login() {
       // Check user role to redirect appropriately
       const user = await apiFetch("/users/me");
       if (user.role === "admin") navigate("/admin");
+      else if (user.role === "hod") navigate("/hod");
       else if (user.role === "teacher") navigate("/teacher");
       else navigate("/student");
       

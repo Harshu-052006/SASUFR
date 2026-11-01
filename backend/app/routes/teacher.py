@@ -30,7 +30,7 @@ router = APIRouter(tags=["teacher"])
 
 
 async def _require_teacher(current_user: dict = Depends(get_current_user)) -> dict:
-    if (current_user.get("role") or "").lower() != ROLE_TEACHER:
+    if (current_user.get("role") or "").lower() not in (ROLE_TEACHER, "hod"):
         raise HTTPException(status_code=403, detail="Faculty access required.")
     return current_user
 

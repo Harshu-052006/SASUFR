@@ -32,6 +32,12 @@ import { Reports as TeacherReports } from "./pages/teacher/Reports";
 import { Profile as TeacherProfile } from "./pages/teacher/Profile";
 import { Settings as TeacherSettings } from "./pages/teacher/Settings";
 
+// HOD
+import { HODDashboard } from "./pages/hod/Dashboard";
+import { HODAnnouncements } from "./pages/hod/Announcements";
+import { HODFaculty } from "./pages/hod/Faculty";
+import { HODStudents } from "./pages/hod/Students";
+
 import { NotFound } from "./pages/NotFound";
 
 function App() {
@@ -81,6 +87,15 @@ function App() {
           <Route path="/teacher/reports" element={<TeacherReports />} />
           <Route path="/teacher/profile" element={<TeacherProfile />} />
           <Route path="/teacher/settings" element={<TeacherSettings />} />
+
+          {/* HOD Routes */}
+          <Route path="/hod" element={<HODDashboard />} />
+          <Route path="/hod/announcements" element={<HODAnnouncements />} />
+          <Route path="/hod/faculty" element={<HODFaculty />} />
+          <Route path="/hod/students" element={<HODStudents />} />
+          <Route path="/hod/reports" element={<TeacherReports />} />
+          <Route path="/hod/profile" element={<TeacherProfile />} />
+          <Route path="/hod/settings" element={<TeacherSettings />} />
 
           {/* Catch-all 404 route */}
           <Route path="*" element={<NotFound />} />

@@ -1,5 +1,5 @@
 import React from "react";
-import { LayoutDashboard, Users, FileText, Settings, LogOut, Menu, ShieldAlert } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Settings, LogOut, Menu, ShieldAlert, Megaphone, GraduationCap } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 
@@ -69,6 +69,16 @@ export function Sidebar({ isOpen, setIsOpen, role }: SidebarProps) {
             <SidebarItem icon={<FileText />} label="View Attendance" to="/teacher/attendance" isOpen={isOpen} />
             <SidebarItem icon={<FileText />} label="Reports" to="/teacher/reports" isOpen={isOpen} />
             <SidebarItem icon={<Settings />} label="Settings" to="/teacher/settings" isOpen={isOpen} />
+          </>
+        )}
+        {role === "hod" && (
+          <>
+            <SidebarItem icon={<LayoutDashboard />} label="Dashboard" to="/hod" isOpen={isOpen} end />
+            <SidebarItem icon={<Megaphone />} label="Announcements" to="/hod/announcements" isOpen={isOpen} />
+            <SidebarItem icon={<GraduationCap />} label="Faculty Roster" to="/hod/faculty" isOpen={isOpen} />
+            <SidebarItem icon={<Users />} label="Students" to="/hod/students" isOpen={isOpen} />
+            <SidebarItem icon={<FileText />} label="Reports" to="/hod/reports" isOpen={isOpen} />
+            <SidebarItem icon={<Settings />} label="Settings" to="/hod/settings" isOpen={isOpen} />
           </>
         )}
       </nav>

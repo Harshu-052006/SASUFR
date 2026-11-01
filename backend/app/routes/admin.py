@@ -11,10 +11,16 @@ import json
 from fastapi.responses import Response, StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from ..database.mongo import get_database
+from ..database.mongo import get_database, next_sequence
 from ..dependencies import get_current_user
 from ..models import ROLE_ADMIN
-from ..schemas import AdminAccountCreate, AdminDeleteRequest, AdminResetPasswordRequest, AdminSetActiveRequest, AdminStats, AdminUserUpdateRequest, TeacherCreate, UserOut, WeeklyReport, PunctualityReport, UserStatusReport, AdminConfig, AdminConfigUpdate, FacultyAttendanceReport, MonitoringLocation, MonthlyAttendanceSummary, AdminBulkUpdateClassYearRequest, ProfileChangeRequestOut, ProfileChangeRequestReview
+from ..schemas import (
+    AdminAccountCreate, AdminDeleteRequest, AdminResetPasswordRequest, AdminSetActiveRequest,
+    AdminStats, AdminUserUpdateRequest, TeacherCreate, UserOut, WeeklyReport, PunctualityReport,
+    UserStatusReport, AdminConfig, AdminConfigUpdate, FacultyAttendanceReport, MonitoringLocation,
+    MonthlyAttendanceSummary, AdminBulkUpdateClassYearRequest, ProfileChangeRequestOut,
+    ProfileChangeRequestReview, DepartmentCreateWithHOD
+)
 from ..services.profile_request_service import get_all_change_requests, review_profile_change_request
 from ..services.attendance_service import get_admin_stats, serialize_attendance, get_recent_attendance_logs, get_attendance_report_rows, get_monthly_attendance_summary_rows
 from ..services.email_service import send_password_changed, send_account_approved_notice, send_account_rejected_notice, check_smtp_connectivity
@@ -980,3 +986,159 @@ async def extract_timetables_from_image(
         inserted_count += 1
         
     return {"message": "Success", "count": inserted_count, "data": extracted_data}
+
+
+@router.get("/admin/departments")
+async def list_admin_departments(
+    current_user: dict = Depends(_require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    from ..routes.hod import _get_dept_regex
+    config_doc = await db.config.find_one({"_id": "global"})
+    base_depts = ["Computer Science", "Electronics & Communication", "Mechanical Engineering", "Computer Applications"]
+    if config_doc and "departments" in config_doc:
+        base_depts = list(dict.fromkeys(base_depts + config_doc["departments"]))
+
+    user_depts = await db.users.distinct("department", {"department": {"$ne": None}})
+    all_depts_raw = list(dict.fromkeys(base_depts + [d for d in user_depts if d]))
+
+    # Deduplicate departments with similar regex patterns (e.g. Computer Application vs Computer Applications)
+    seen_patterns = set()
+    all_depts = []
+    for d in all_depts_raw:
+        reg = _get_dept_regex(d)
+        if reg not in seen_patterns:
+            seen_patterns.add(reg)
+            all_depts.append(d)
+
+    results = []
+    for dept in all_depts:
+        dept_regex = _get_dept_regex(dept)
+        hod_user = await db.users.find_one({
+            "role": "hod",
+            "department": {"$regex": dept_regex},
+            "is_active": True
+        })
+        faculty_count = await db.users.count_documents({
+            "role": {"$in": ["teacher", "hod"]},
+            "department": {"$regex": dept_regex}
+        })
+        student_count = await db.users.count_documents({
+            "role": "student",
+            "department": {"$regex": dept_regex}
+        })
+        results.append({
+            "department": dept,
+            "has_hod": bool(hod_user),
+            "hod": {
+                "id": hod_user["id"],
+                "full_name": hod_user.get("full_name"),
+                "email": hod_user.get("email"),
+                "roll_number": hod_user.get("roll_number")
+            } if hod_user else None,
+            "faculty_count": faculty_count,
+            "student_count": student_count,
+            "status": "Active" if hod_user else "Vacant (No HOD)"
+        })
+    return results
+
+
+@router.post("/admin/departments")
+async def create_department_with_hod(
+    payload: DepartmentCreateWithHOD,
+    current_user: dict = Depends(_require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    from ..routes.hod import _get_dept_regex
+    from ..models import ROLE_HOD
+
+    dept_name = payload.department_name.strip()
+    if not dept_name:
+        raise HTTPException(status_code=400, detail="Department name is required.")
+
+    dept_regex = _get_dept_regex(dept_name)
+
+    # 1. Check if department already exists in config or users
+    existing_dept_user = await db.users.find_one({"department": {"$regex": dept_regex}})
+    config_doc = await db.config.find_one({"_id": "global"})
+    existing_config_depts = config_doc.get("departments", []) if config_doc else []
+    
+    for d in existing_config_depts:
+        if d.strip().lower() == dept_name.lower():
+            raise HTTPException(status_code=400, detail=f"Department '{dept_name}' already exists.")
+
+    if existing_dept_user:
+        raise HTTPException(status_code=400, detail=f"Department '{dept_name}' already exists with active users.")
+
+    # 2. Strict Validation: Department CANNOT be created without an HOD!
+    hod_record = None
+
+    if payload.create_new_hod:
+        if not payload.hod_full_name or not payload.hod_full_name.strip():
+            raise HTTPException(status_code=400, detail="HOD Full Name is mandatory. A department cannot exist without an HOD.")
+        if not payload.hod_email:
+            raise HTTPException(status_code=400, detail="HOD Email is mandatory. A department cannot exist without an HOD.")
+        
+        email_clean = str(payload.hod_email).lower().strip()
+        if await get_user_by_email(db, email_clean):
+            raise HTTPException(status_code=400, detail=f"User with email '{email_clean}' already exists.")
+
+        user_id = await next_sequence("users")
+        hod_pwd = payload.hod_password or "Password123"
+        roll = payload.hod_roll_number or f"HOD-{payload.department_code or dept_name[:3].upper()}01"
+
+        hod_record = {
+            "id": int(user_id),
+            "full_name": payload.hod_full_name.strip(),
+            "email": email_clean,
+            "roll_number": roll,
+            "hashed_password": hash_password(hod_pwd),
+            "profile_picture": None,
+            "is_active": True,
+            "is_verified": True,
+            "is_admin": False,
+            "role": ROLE_HOD,
+            "designation": "Head of Department",
+            "department": dept_name,
+            "approval_status": "approved",
+            "created_at": iso_ist(),
+            "updated_at": iso_ist()
+        }
+        await db.users.insert_one(hod_record)
+
+    elif payload.promote_user_id:
+        target_teacher = await db.users.find_one({"id": int(payload.promote_user_id)})
+        if not target_teacher:
+            raise HTTPException(status_code=404, detail="Selected faculty user not found.")
+        
+        await db.users.update_one(
+            {"id": int(payload.promote_user_id)},
+            {"$set": {
+                "role": ROLE_HOD,
+                "designation": "Head of Department",
+                "department": dept_name,
+                "updated_at": iso_ist()
+            }}
+        )
+        hod_record = target_teacher
+        hod_record["role"] = ROLE_HOD
+        hod_record["department"] = dept_name
+    else:
+        raise HTTPException(
+            status_code=400, 
+            detail="Validation failed: Every department must have an assigned Head of Department (HOD). Please provide HOD details."
+        )
+
+    # 3. Add department to global config
+    await db.config.update_one(
+        {"_id": "global"},
+        {"$addToSet": {"departments": dept_name}},
+        upsert=True
+    )
+
+    return {
+        "message": f"Department '{dept_name}' created successfully with assigned HOD.",
+        "department": dept_name,
+        "hod_name": hod_record.get("full_name") if hod_record else None,
+        "hod_email": hod_record.get("email") if hod_record else None
+    }

@@ -9,7 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
 from ..config import settings
-from ..models import ROLE_ADMIN, ROLE_STUDENT, ROLE_TEACHER, VALID_ROLES
+from ..models import ROLE_ADMIN, ROLE_STUDENT, ROLE_TEACHER, ROLE_HOD, VALID_ROLES
 from ..schemas import AdminAccountCreate, AdminUserUpdateRequest, TeacherCreate, UserCreate, UserProfileUpdate
 from ..utils.security import create_access_token, hash_password, otp_hash, otp_salt, verify_password
 from ..utils.time import iso_ist, now_ist, get_campus_now
@@ -50,7 +50,12 @@ async def create_registered_user(db: AsyncIOMotorDatabase, payload: UserCreate, 
     user_seq = await db.counters.find_one_and_update(
         {"_id": "users"}, {"$inc": {"seq": 1}}, upsert=True, return_document=ReturnDocument.AFTER
     )
-    role = ROLE_TEACHER if payload.requested_role == "teacher" else ROLE_STUDENT
+    if payload.requested_role == "hod" or (payload.designation and payload.designation.strip().lower() == "hod"):
+        role = ROLE_HOD
+    elif payload.requested_role == "teacher":
+        role = ROLE_TEACHER
+    else:
+        role = ROLE_STUDENT
     roll_number = payload.roll_number.strip() if payload.roll_number else ""
     
     if roll_number:
@@ -198,6 +203,25 @@ async def admin_update_user(db: AsyncIOMotorDatabase, target: dict, payload: Adm
         updates["is_admin"] = updates["role"] == ROLE_ADMIN
     if payload.department is not None:
         updates["department"] = payload.department.strip()
+
+    target_role = updates.get("role", target.get("role"))
+    target_dept = updates.get("department", target.get("department"))
+    if target_role == "hod" and target_dept:
+        from ..routes.hod import _get_dept_regex
+        dept_regex = _get_dept_regex(target_dept)
+        existing_hod = await db.users.find_one({
+            "role": "hod",
+            "department": {"$regex": dept_regex},
+            "id": {"$ne": target["id"]},
+            "is_active": True
+        })
+        if existing_hod:
+            hod_name = existing_hod.get("full_name") or existing_hod.get("email")
+            raise HTTPException(
+                status_code=400,
+                detail=f"The '{target_dept}' department already has an assigned HOD ({hod_name}). A department can have only one active HOD."
+            )
+
     if not updates:
         raise HTTPException(status_code=400, detail="No changes provided")
     updates["updated_at"] = iso_ist()

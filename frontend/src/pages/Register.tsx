@@ -382,6 +382,7 @@ export function Register() {
                 <SelectContent>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="teacher">Faculty / Staff</SelectItem>
+                  <SelectItem value="hod">Head of Department (HOD)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

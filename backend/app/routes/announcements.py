@@ -16,17 +16,11 @@ router = APIRouter(prefix="/announcements", tags=["Announcements"])
 
 @router.get("/active", response_model=List[AnnouncementOut])
 async def get_active_announcements(
-    request: Request,
     department: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
-    target_dept = department
-    try:
-        user = await get_current_user(request=request, token="", db=db)
-        if user and user.get("department"):
-            target_dept = user.get("department")
-    except Exception:
-        pass
+    target_dept = department or (current_user.get("department") if current_user else None)
 
     current_time = iso_ist()
     query: dict = {"expires_at": {"$gt": current_time}}
