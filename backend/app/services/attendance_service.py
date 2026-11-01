@@ -1209,6 +1209,7 @@ async def get_admin_stats(db: AsyncIOMotorDatabase) -> dict:
     today = date_key()
     today_records = await db.attendance.find({"date": today}).to_list(length=None)
     present_today = sum(1 for record in today_records if str(record.get("status")) in {"Present", "Late"})
+    late_today = sum(1 for record in today_records if str(record.get("status")) == "Late")
     explicit_absent_today = sum(1 for record in today_records if str(record.get("status")) == "Absent")
     day_finalized = _attendance_day_completed(bool(today_records))
     absent_today = max(0, total_students - present_today) if day_finalized else explicit_absent_today
@@ -1227,6 +1228,7 @@ async def get_admin_stats(db: AsyncIOMotorDatabase) -> dict:
         "total_students": total_students,
         "present_today": present_today, 
         "absent_today": absent_today,
+        "late_today": late_today,
         "attendance_percentage": attendance_percentage,
         "system_status": "Online",
         "email_status": email_status,
@@ -1240,9 +1242,12 @@ async def get_recent_attendance_logs(db: AsyncIOMotorDatabase, limit: int = 10) 
     async for record in cursor:
         user = await db.users.find_one({"id": record["user_id"]})
         logs.append({
+            "id": str(record.get("_id", "")),
             "user_name": user.get("full_name") if user else "Unknown User",
+            "roll_number": user.get("roll_number") if user else None,
             "department": user.get("department") if user else "N/A",
-            "timestamp": record["check_in"],
-            "status": record["status"]
+            "timestamp": record.get("check_in") or record.get("created_at") or "--:--",
+            "status": record.get("status", "Present"),
+            "method": record.get("method", "face")
         })
     return logs

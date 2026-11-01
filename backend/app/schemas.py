@@ -261,6 +261,7 @@ class AdminStats(BaseModel):
     total_students: int
     present_today: int
     absent_today: int
+    late_today: int = 0
     attendance_percentage: float = 0.0
     system_status: str
     email_status: str = "ok"
