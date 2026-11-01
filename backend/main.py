@@ -297,22 +297,6 @@ app.include_router(hod_router)
 app.include_router(announcements_router)
 
 
-@app.get("/{full_path:path}", include_in_schema=False)
-async def spa_catch_all(full_path: str):
-    if full_path.startswith(("api/", "health", "docs", "openapi.json", "static/", "assets/", "ws")):
-        raise HTTPException(status_code=404, detail="Not Found")
-    if full_path and REACT_DIST_DIR.exists():
-        candidate = REACT_DIST_DIR / full_path
-        if candidate.is_file():
-            return FileResponse(candidate)
-    react_index = REACT_DIST_DIR / "index.html"
-    if react_index.exists():
-        return FileResponse(react_index)
-    index_file = FRONTEND_DIR / "index.html"
-    if index_file.exists():
-        return RedirectResponse(url="/static/index.html")
-    raise HTTPException(status_code=404, detail="Not Found")
-
 # Mount the same routers under /api for the new React frontend (Vite dev server or built bundle)
 app.include_router(auth_router, prefix="/api")
 app.include_router(attendance_router, prefix="/api")
@@ -325,6 +309,23 @@ app.include_router(batch_router, prefix="/api")
 app.include_router(electives_router, prefix="/api")
 app.include_router(hod_router, prefix="/api")
 app.include_router(announcements_router, prefix="/api")
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def spa_catch_all(full_path: str):
+    if full_path.startswith(("api/", "health", "docs", "openapi.json", "static/", "assets/", "ws", "teacher/", "admin/", "users/", "student/", "timetable/", "hierarchy/", "batch/", "electives/", "hod/", "announcements/")):
+        raise HTTPException(status_code=404, detail="Not Found")
+    if full_path and REACT_DIST_DIR.exists():
+        candidate = REACT_DIST_DIR / full_path
+        if candidate.is_file():
+            return FileResponse(candidate)
+    react_index = REACT_DIST_DIR / "index.html"
+    if react_index.exists():
+        return FileResponse(react_index)
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return RedirectResponse(url="/static/index.html")
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 if __name__ == "__main__":

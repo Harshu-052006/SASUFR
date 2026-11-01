@@ -87,7 +87,8 @@ export function Students() {
     }
   };
 
-  const filteredUsers = users.filter((u) => {
+  const userList = Array.isArray(users) ? users : [];
+  const filteredUsers = userList.filter((u) => {
     const matchesSearch = (u.full_name || "").toLowerCase().includes(search.toLowerCase()) || 
                           (u.roll_number || "").toLowerCase().includes(search.toLowerCase());
     const matchesRole = filterRole ? u.role === filterRole : true;

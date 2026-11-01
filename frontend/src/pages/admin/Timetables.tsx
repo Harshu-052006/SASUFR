@@ -97,7 +97,8 @@ export function Timetables() {
     }
   };
 
-  const filtered = timetables.filter(t => 
+  const timetableList = Array.isArray(timetables) ? timetables : [];
+  const filtered = timetableList.filter(t => 
     (t.subject || "").toLowerCase().includes(search.toLowerCase()) || 
     (t.teacher_name || "").toLowerCase().includes(search.toLowerCase())
   );

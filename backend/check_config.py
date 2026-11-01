@@ -7,8 +7,8 @@ async def main():
     db = client.smart_attendance
     doc = await db.config.find_one({"_id": "global"})
     print(f"Global Config: {doc}")
-    if doc and doc.get("geofencing_enabled") is False:
-        await db.config.update_one({"_id": "global"}, {"$set": {"geofencing_enabled": True}})
-        print("Updated geofencing_enabled to True in DB global config.")
+    await db.config.update_one({"_id": "global"}, {"$set": {"official_domain": "mit.asia"}}, upsert=True)
+    doc = await db.config.find_one({"_id": "global"})
+    print(f"Updated Global Config: {doc}")
 
 asyncio.run(main())

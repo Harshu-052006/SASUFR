@@ -114,6 +114,21 @@ export function Settings() {
                   </div>
 
                   <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-lg font-medium leading-none">Organization Domain</h3>
+                    <p className="text-sm text-muted-foreground">Students with this email domain (e.g. <code>mit.asia</code>) can register even if their roll number is not yet on the whitelist.</p>
+                    <div className="space-y-2 max-w-sm">
+                      <label className="text-sm font-medium leading-none">Official Domain</label>
+                      <Input 
+                        type="text" 
+                        name="official_domain" 
+                        placeholder="e.g. mit.asia" 
+                        value={config.official_domain || ""} 
+                        onChange={handleChange} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-lg font-medium leading-none">Security Features</h3>
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">

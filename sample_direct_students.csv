@@ -1,0 +1,7 @@
+roll_number,email,full_name,department,role,password
+CS-2024-001,aarav.sharma@mit.asia,Aarav Sharma,Computer Science,student,Student@123
+CS-2024-002,diya.patel@mit.asia,Diya Patel,Computer Science,student,Student@123
+EC-2024-010,rohan.verma@mit.asia,Rohan Verma,Electronics & Communication,student,Student@123
+EC-2024-011,ananya.iyer@mit.asia,Ananya Iyer,Electronics & Communication,student,Student@123
+ME-2024-020,kavya.nair@mit.asia,Kavya Nair,Mechanical Engineering,student,Student@123
+CA-2024-030,rahul.deshmukh@mit.asia,Rahul Deshmukh,Computer Application,student,Student@123

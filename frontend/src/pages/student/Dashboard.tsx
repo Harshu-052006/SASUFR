@@ -158,8 +158,9 @@ export function Dashboard() {
   };
 
   // Derived stats
-  const present = stats?.history?.filter((h: any) => h.status === "Present" || h.status === "Late").length || 0;
-  const absent = stats?.history?.filter((h: any) => h.status === "Absent").length || 0;
+  const historyList = Array.isArray(stats?.history) ? stats.history : [];
+  const present = historyList.filter((h: any) => h.status === "Present" || h.status === "Late").length;
+  const absent = historyList.filter((h: any) => h.status === "Absent").length;
   const total = present + absent;
   const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : "0.0";
 

@@ -88,9 +88,10 @@ async def register(
         else:
             # 2. Fallback to Domain Validation
             settings_doc = await db.config.find_one({"_id": "global"})
-            official_domain = settings_doc.get("official_domain") if settings_doc else None
+            raw_domain = settings_doc.get("official_domain") if settings_doc else None
+            official_domain = raw_domain.strip().lower().lstrip("@") if raw_domain and isinstance(raw_domain, str) and raw_domain.strip() else None
             
-            if not official_domain or not email.endswith(f"@{official_domain.lstrip('@')}"):
+            if official_domain and not email.endswith(f"@{official_domain}"):
                 await log_security_event(
                     db,
                     event_type="FAILED_WHITELIST_CHECK",
@@ -100,7 +101,7 @@ async def register(
                     ip_address=(request.client.host if request and request.client else None),
                     user_agent=(request.headers.get("user-agent") if request else None),
                 )
-                raise HTTPException(status_code=400, detail="Student roll number not on whitelist and email does not match official organization domain.")
+                raise HTTPException(status_code=400, detail=f"Student roll number not on whitelist and email does not match official organization domain (@{official_domain}).")
     elif requested_role == "teacher":
         if not payload.id_card_image:
             raise HTTPException(status_code=400, detail="ID card image is required for faculty registration.")

@@ -51,5 +51,8 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   if (contentType && contentType.includes('application/json')) {
       return response.json();
   }
+  if (contentType && contentType.includes('text/html')) {
+      throw new Error(`API endpoint not found: ${endpoint}`);
+  }
   return response;
 }

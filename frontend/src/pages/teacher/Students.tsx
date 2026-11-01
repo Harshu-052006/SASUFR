@@ -17,17 +17,18 @@ export function Students() {
 
   const fetchStudents = async () => {
     try {
-      // Assuming teacher can fetch all students or a filtered list
-      const data = await apiFetch("/admin/students"); 
-      setStudents(data || []);
+      const data = await apiFetch("/teacher/department/students"); 
+      setStudents(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredStudents = students.filter(s => 
+  const studentList = Array.isArray(students) ? students : [];
+  const filteredStudents = studentList.filter(s => 
     (s.full_name || "").toLowerCase().includes(search.toLowerCase()) || 
     (s.roll_number || "").toLowerCase().includes(search.toLowerCase()) ||
     (s.department || "").toLowerCase().includes(search.toLowerCase())

@@ -25,16 +25,17 @@ export function MarkAttendance() {
     try {
       setLoading(true);
       const [studentsRes, activeRes] = await Promise.all([
-        apiFetch("/admin/students").catch(() => []), // Teacher probably uses admin/students or teacher/students
+        apiFetch("/teacher/department/students").catch(() => []),
         apiFetch("/teacher/sessions/active").catch(() => [])
       ]);
-      setStudents(studentsRes);
-      if (activeRes && activeRes.length > 0) {
+      setStudents(Array.isArray(studentsRes) ? studentsRes : []);
+      if (Array.isArray(activeRes) && activeRes.length > 0) {
         setActiveSession(activeRes[0]);
       }
       await fetchLiveFeed();
     } catch (err) {
       console.error(err);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -43,9 +44,10 @@ export function MarkAttendance() {
   const fetchLiveFeed = async () => {
     try {
       const data = await apiFetch("/teacher/attendance/today");
-      setFeed(data || []);
+      setFeed(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setFeed([]);
     }
   };
 
@@ -61,7 +63,8 @@ export function MarkAttendance() {
     }
   };
 
-  const filteredStudents = students.filter(s => 
+  const studentList = Array.isArray(students) ? students : [];
+  const filteredStudents = studentList.filter(s => 
     (s.full_name || "").toLowerCase().includes(search.toLowerCase()) || 
     (s.roll_number || "").toLowerCase().includes(search.toLowerCase())
   );
@@ -83,7 +86,7 @@ export function MarkAttendance() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-y-auto">
-              {feed.length === 0 ? (
+              {!Array.isArray(feed) || feed.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground text-sm">
                   No attendance records today.
                 </div>
@@ -92,7 +95,7 @@ export function MarkAttendance() {
                   {feed.map((record, i) => (
                     <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                       <div>
-                        <div className="font-bold text-sm text-slate-800">{record.student_name}</div>
+                        <div className="font-bold text-sm text-slate-800">{record.full_name || record.student_name || record.email}</div>
                         <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                            {record.method === 'face' ? '📷 Biometric' : '✍️ Manual'}
                         </div>
@@ -103,7 +106,9 @@ export function MarkAttendance() {
                         }`}>
                           {record.status}
                         </span>
-                        <div className="text-[0.65rem] text-slate-400 mt-1">{new Date(record.created_at).toLocaleTimeString()}</div>
+                        <div className="text-[0.65rem] text-slate-400 mt-1">
+                          {record.check_in || (record.created_at ? new Date(record.created_at).toLocaleTimeString() : "--:--")}
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -27,7 +27,12 @@ export function Reports() {
       // Usually, it's a GET request like /teacher/reports/export?start_date=X&end_date=Y&format=Z
       // If it's authenticated with cookies, window.location.href might work, or fetch -> blob.
       
-      const response = await fetch(`http://127.0.0.1:8000/teacher/reports/export?start_date=${startDate}&end_date=${endDate}&format=${format}`, {
+      const token = localStorage.getItem('access_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await fetch(`/teacher/reports/export?start_date=${startDate}&end_date=${endDate}&format=${format}`, {
+        headers,
         credentials: "include"
       });
       

@@ -21,18 +21,17 @@ export function ViewAttendance() {
   const fetchAttendance = async () => {
     setLoading(true);
     try {
-      // Reusing the today endpoint or if there's a specific date endpoint.
-      // The API `GET /teacher/attendance/today` actually just gets today.
-      // If the backend doesn't support date filtering via this endpoint, we just show today.
-      // Assuming it supports `?date=YYYY-MM-DD` or we just hit the report endpoint.
       const data = await apiFetch(`/teacher/attendance/today?date=${date}`);
-      setAttendance(data || []);
+      setAttendance(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setAttendance([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const attendanceList = Array.isArray(attendance) ? attendance : [];
 
   return (
     <DashboardLayout title="View Attendance">
@@ -69,21 +68,23 @@ export function ViewAttendance() {
                       <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
                     </TableCell>
                   </TableRow>
-                ) : attendance.length === 0 ? (
+                ) : attendanceList.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
                       No attendance records found for {date}.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  attendance.map(record => (
+                  attendanceList.map((record: any) => (
                     <TableRow key={record.id}>
-                      <TableCell className="font-semibold text-slate-800">{record.student_name}</TableCell>
+                      <TableCell className="font-semibold text-slate-800">
+                        {record.full_name || record.student_name || record.email}
+                      </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                           record.status === 'Present' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                         }`}>
-                          {record.status}
+                          {record.status || 'Not Marked'}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -94,7 +95,7 @@ export function ViewAttendance() {
                         )}
                       </TableCell>
                       <TableCell className="text-slate-500 font-mono text-sm">
-                        {new Date(record.created_at).toLocaleTimeString()}
+                        {record.check_in || (record.created_at ? new Date(record.created_at).toLocaleTimeString() : "--:--")}
                       </TableCell>
                     </TableRow>
                   ))
